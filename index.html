@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Historical Figures AR</title>
+    <title>The Life of Malaysia's Historical Figures</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -18,28 +18,33 @@
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
         z-index: 3000; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; color: #f1c40f;
+        justify-content: center; align-items: center; color: #f1c40f; text-align: center;
       }
       .start-btn {
         background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px;
         font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px;
+        cursor: pointer; box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
       }
 
-      /* SCREEN 2: SELECTION (Fixed to show images) */
+      /* SCREEN 2: SELECTION (Scrollable Grid) */
       #selection-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: #2c3e50; z-index: 2500; display: none;
-        flex-direction: column; justify-content: center; align-items: center;
+        flex-direction: column; align-items: center; padding-top: 20px;
+      }
+      .grid-container {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+        width: 90%; max-height: 80%; overflow-y: auto; padding-bottom: 50px;
       }
       .char-card {
-        background: white; width: 220px; padding: 15px; margin: 10px;
-        border-radius: 10px; text-align: center; cursor: pointer;
-        border: 4px solid #f1c40f;
+        background: white; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer;
+        border: 3px solid #f1c40f; transition: transform 0.2s;
       }
-      /* This forces the image to fit nicely */
+      .char-card:active { transform: scale(0.95); }
       .char-card img {
-        width: 100%; height: 180px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;
+        width: 100%; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 5px;
       }
+      .char-card h3 { font-size: 14px; margin: 5px 0 0 0; color: #1a1a2e; font-weight: bold; }
 
       /* SCREEN 3: PROFILE */
       #profile-screen {
@@ -48,113 +53,231 @@
         flex-direction: column; align-items: center;
       }
       .profile-header {
-        width: 100%; background: #1a1a2e; padding: 20px; color: #f1c40f;
+        width: 100%; background: #1a1a2e; padding: 15px; color: #f1c40f;
         display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
       }
       .profile-pic-large {
-        width: 120px; height: 120px; border-radius: 50%; border: 4px solid #f1c40f;
-        margin-top: 20px; object-fit: cover; background: #999;
+        width: 100px; height: 100px; border-radius: 50%; border: 4px solid #f1c40f;
+        margin-top: 15px; object-fit: cover; background: #999;
       }
       .menu-buttons { width: 90%; display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
       .menu-btn {
         background: white; border: 1px solid #ccc; padding: 15px; border-radius: 8px;
-        font-size: 16px; text-align: left; width: 100%;
+        font-size: 16px; text-align: left; width: 100%; cursor: pointer;
+        display: flex; justify-content: space-between;
       }
-      .highlight-btn { background: #1a1a2e; color: #f1c40f; border: 1px solid #f1c40f; }
+      .highlight-btn { background: #1a1a2e; color: #f1c40f; border: 1px solid #f1c40f; font-weight: bold; }
 
       /* POPUP INFO */
       #info-box {
-        position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 60%; background: white;
         padding: 20px; box-sizing: border-box; border-top: 5px solid #f1c40f;
         transform: translateY(100%); transition: 0.3s; z-index: 2200;
+        overflow-y: auto; box-shadow: 0 -10px 50px rgba(0,0,0,0.5);
       }
       #info-box.active { transform: translateY(0); }
+      #info-text { font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap; }
 
-      /* AR UI */
+      /* SCREEN 4: AR HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
-      .hud-box { background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 15px; display: inline-block; }
+      .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
+
+      /* SCREEN 5: QUIZ */
+      #quiz-screen {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px;
+        padding: 20px; text-align: center; z-index: 4000; display: none;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+      }
+      .quiz-option {
+        display: block; width: 100%; padding: 12px; margin: 10px 0;
+        background: #ecf0f1; border: none; border-radius: 8px; font-size: 15px; cursor: pointer;
+      }
+
+      /* SCREEN 6: VICTORY */
+      #victory-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none;
+        flex-direction: column; justify-content: center; align-items: center; color: white;
+      }
     </style>
   </head>
 
   <body>
 
     <div id="title-screen">
-      <h1 style="font-family:'Cinzel',serif; font-size:40px;">MALAYA AR</h1>
-      <button class="start-btn" onclick="goToSelection()">START JOURNEY</button>
+      <h1 style="font-family:'Cinzel',serif; font-size:32px; padding:0 20px;">The Life of Malaysia's Historical Figures</h1>
+      <p style="color:#bdc3c7;">Interactive AR Experience</p>
+      <button class="start-btn" onclick="goToSelection()">ENTER MUSEUM</button>
     </div>
 
     <div id="selection-screen">
-      <h2 style="color:white; font-family:'Cinzel',serif;">Choose Figure</h2>
+      <h2 style="color:white; font-family:'Cinzel',serif; margin-bottom:10px;">Select Figure</h2>
       
-      <div class="char-card" onclick="openProfile('hubback')">
-        <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
-        <h3>A.B. Hubback</h3>
-      </div>
-
-      <div class="char-card" onclick="openProfile('jewkes')">
-        <img src="./assets/jewkes.png" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
-        <h3>Stanley Jewkes</h3>
+      <div class="grid-container">
+        <div class="char-card" onclick="openProfile('hubback')">
+          <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Hubback'">
+          <h3>A.B. Hubback</h3>
+        </div>
+        <div class="char-card" onclick="openProfile('norman')">
+          <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Norman'">
+          <h3>A.C. Norman</h3>
+        </div>
+        <div class="char-card" onclick="openProfile('bidwell')">
+          <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Bidwell'">
+          <h3>R.A.J Bidwell</h3>
+        </div>
+        <div class="char-card" onclick="openProfile('spooner')">
+          <img src="./assets/spooner.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Spooner'">
+          <h3>Charles Spooner</h3>
+        </div>
+        <div class="char-card" onclick="openProfile('jewkes')">
+          <img src="./assets/jewkes.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Jewkes'">
+          <h3>Stanley Jewkes</h3>
+        </div>
+        <div class="char-card" onclick="openProfile('baharuddin')">
+          <img src="./assets/baharuddin.png" onerror="this.src='https://via.placeholder.com/150/ccc/333?text=Baharuddin'">
+          <h3>Datuk Baharuddin</h3>
+        </div>
       </div>
     </div>
 
     <div id="profile-screen">
       <div class="profile-header">
         <span onclick="goBack()" style="font-size:30px; cursor:pointer;">&#8592;</span>
-        <h2 id="p-name" style="margin:0; font-family:'Cinzel',serif;">Name</h2>
+        <h3 id="p-name" style="margin:0; font-family:'Cinzel',serif; font-size:16px;">Name</h3>
         <span></span>
       </div>
       
       <img id="p-img" class="profile-pic-large" src="">
 
       <div class="menu-buttons">
-        <button class="menu-btn" onclick="showInfo('bg')">📜 Background</button>
-        <button class="menu-btn" onclick="showInfo('con')">🏗️ Contribution</button>
-        <button class="menu-btn highlight-btn" onclick="startAR()">🏛️ Start AR Mission</button>
+        <button class="menu-btn" onclick="showInfo('bg')"><span>📜 Background</span><span>&#8250;</span></button>
+        <button class="menu-btn" onclick="showInfo('con')"><span>🏗️ Contribution</span><span>&#8250;</span></button>
+        <button class="menu-btn highlight-btn" onclick="startAR()"><span>🏛️ Historical Buildings Built</span><span>GO &#8594;</span></button>
       </div>
 
       <div id="info-box">
-        <h3 id="info-title">Title</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h2 id="info-title" style="margin:0; color:#1a1a2e; font-family:'Cinzel',serif;">Title</h2>
+          <button onclick="closeInfo()" style="padding:5px 15px; background:#e74c3c; color:white; border:none; border-radius:5px;">X</button>
+        </div>
         <p id="info-text">Text...</p>
-        <button onclick="closeInfo()" style="width:100%; padding:10px; background:#eee; border:none;">Close</button>
       </div>
     </div>
 
     <div id="ar-hud">
       <div class="hud-box">
-        <p>Fix the Design:</p>
-        <button onclick="alert('Wrong!')">Gothic</button>
-        <button onclick="finishGame()">Onion Dome</button>
+        <h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Challenge</h3>
+        <p id="ar-task-desc">Task description...</p>
+        <div style="margin-top:10px;">
+          <button class="menu-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="alert('Incorrect style!')">Option A</button>
+          <button class="menu-btn highlight-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="finishGame()">Option B</button>
+        </div>
       </div>
+    </div>
+
+    <div id="quiz-screen">
+      <h3 style="color:#1a1a2e; font-family:'Cinzel',serif;">History Quiz</h3>
+      <p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">Question goes here...</p>
+      <div id="quiz-options-container"></div>
+    </div>
+
+    <div id="victory-screen">
+      <h1 style="font-family:'Cinzel',serif; font-size:40px;">CORRECT!</h1>
+      <p>You have mastered this history.</p>
+      <button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button>
     </div>
 
     <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-        <a-cylinder position="0 0 0" radius="0.3" height="1" color="#8B4513"></a-cylinder>
-        <a-sphere id="onion-dome" position="0 0.5 0" radius="0.32" color="#FFD700" visible="false"></a-sphere>
+        <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
+        <a-box position="0 0.4 0" width="0.6" depth="0.6" height="0.1" color="#555"></a-box>
+        <a-sphere id="ar-object" position="0 0.8 0" radius="0.35" color="#FFD700" visible="false"></a-sphere>
       </a-entity>
     </a-scene>
 
     <script>
-      // DATA DATABASE
+      // --- DATABASE (Populated with your text) ---
       const db = {
         hubback: {
-          name: "A.B. Hubback",
-          img: "./assets/hubback.png", 
-          bg: "Brigadier General and Architect.",
-          con: "Designed the KL Railway Station and Jamek Mosque."
+          name: "Arthur Benison Hubback",
+          img: "./assets/hubback.png",
+          bg: "Born: 13 April 1871 in Liverpool. British Army officer and architect. He served as Brigadier General in WWI and commanded troops in France.",
+          con: "Designed the Jamek Mosque, KL Railway Station, and National Textile Museum. Introduced Indo-Saracenic style (Onion Domes) to Malaya.",
+          task: { title: "Jamek Mosque Design", desc: "Spooner demands an Indo-Saracenic roof. Choose it!" },
+          quiz: {
+            q: "Hubback commanded troops in which war?",
+            options: ["World War II", "World War I", "Boer War"],
+            correct: 1 // Index 1 is WWI
+          }
+        },
+        norman: {
+          name: "A.C. Norman",
+          img: "./assets/norman.png",
+          bg: "Arthur Charles Alfred Norman (1858-1944). British architect active in Malaya. Fellow of the Royal Institute of British Architects (FRIBA).",
+          con: "Created the ground plan for the Sultan Abdul Samad Building. Designed St. Mary's Church and Pudu Prison.",
+          task: { title: "Sultan Abdul Samad", desc: "Norman drew the floor plan. Now add the roof!" },
+          quiz: {
+            q: "Which building's ground plan is credited to Norman?",
+            options: ["National Mosque", "Sultan Abdul Samad Building", "Stadium Merdeka"],
+            correct: 1
+          }
+        },
+        bidwell: {
+          name: "R.A.J Bidwell",
+          img: "./assets/bidwell.png",
+          bg: "Regent Alfred John Bidwell (1869-1918). Born in South London. Worked for Selangor PWD.",
+          con: "Designed the Elevation of Sultan Abdul Samad Building. Spooner rejected his Classic Renaissance design, so he switched to Indo-Saracenic.",
+          task: { title: "Change the Style", desc: "Spooner rejected Renaissance. Switch to Indo-Saracenic!" },
+          quiz: {
+            q: "Who instructed Bidwell to rework the design?",
+            options: ["A.B. Hubback", "Charles Edwin Spooner", "Frank Swettenham"],
+            correct: 1
+          }
+        },
+        spooner: {
+          name: "Charles Edwin Spooner",
+          img: "./assets/spooner.png",
+          bg: "British Engineer (1853-1909). State Engineer of Selangor PWD. General Manager of FMS Railways.",
+          con: "Oversaw the Sultan Abdul Samad Building. Initiated KL Railway Station. Described the style as 'Islamic' or 'Mahometan'.",
+          task: { title: "State Engineer's Order", desc: "I want an Islamic Style roof. Build it!" },
+          quiz: {
+            q: "Spooner described the new architectural style as:",
+            options: ["Gothic", "Modernist", "Islamic/Mahometan"],
+            correct: 2
+          }
         },
         jewkes: {
-          name: "Stanley Jewkes",
+          name: "Stanley Edward Jewkes",
           img: "./assets/jewkes.png",
-          bg: "American Architect in the post-war era.",
-          con: "Designed Stadium Merdeka (1957)."
+          bg: "American architect & engineer (1913-2011). Director of PWD. Close with Tunku Abdul Rahman.",
+          con: "Designed Stadium Merdeka for the Declaration of Independence (1957).",
+          task: { title: "Stadium Merdeka", desc: "Build the site for Independence Day!" },
+          quiz: {
+            q: "What historic event happened at Stadium Merdeka?",
+            options: ["Commonwealth Games", "Declaration of Independence", "Malaysia Day"],
+            correct: 1
+          }
+        },
+        baharuddin: {
+          name: "Datuk Baharuddin Abu Kassim",
+          img: "./assets/baharuddin.png",
+          bg: "Born 1929. One of the first Malay architects. Designed the National Mosque to reflect Malaysian identity.",
+          con: "Chief Architect of Masjid Negara. Designed the 'Umbrella Dome' to suit the tropics.",
+          task: { title: "National Mosque", desc: "Construct the 'Umbrella Dome'!" },
+          quiz: {
+            q: "What does the National Mosque's main dome resemble?",
+            options: ["A Pyramid", "An Onion", "A Semi-opened Umbrella"],
+            correct: 2
+          }
         }
       };
 
       let currentData = null;
 
-      // NAVIGATION
+      // --- NAVIGATION ---
       function goToSelection() {
         document.getElementById('title-screen').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
@@ -166,33 +289,25 @@
       }
 
       function openProfile(id) {
-        console.log("Clicked on:", id); // Check Console if this fails
-        
-        currentData = db[id]; // Get data from DB
-        
-        if (!currentData) {
-          alert("Error: Could not find data for " + id);
-          return;
-        }
-
-        // Fill HTML with Data
+        currentData = db[id];
         document.getElementById('p-name').innerText = currentData.name;
         document.getElementById('p-img').src = currentData.img;
-        
-        // Switch Screens
         document.getElementById('selection-screen').style.display = 'none';
         document.getElementById('profile-screen').style.display = 'flex';
       }
 
-      // INFO POPUP
+      // --- INFO POPUPS ---
       function showInfo(type) {
         const box = document.getElementById('info-box');
+        const title = document.getElementById('info-title');
+        const text = document.getElementById('info-text');
+
         if (type === 'bg') {
-          document.getElementById('info-title').innerText = "Background";
-          document.getElementById('info-text').innerText = currentData.bg;
+          title.innerText = "Background";
+          text.innerText = currentData.bg;
         } else {
-          document.getElementById('info-title').innerText = "Contribution";
-          document.getElementById('info-text').innerText = currentData.con;
+          title.innerText = "Contribution";
+          text.innerText = currentData.con;
         }
         box.classList.add('active');
       }
@@ -201,12 +316,15 @@
         document.getElementById('info-box').classList.remove('active');
       }
 
-      // AR GAME
+      // --- AR GAME ---
       function startAR() {
         document.getElementById('profile-screen').style.display = 'none';
-        alert("Camera Active! Point at your target.");
+        alert("Mission: Point camera at the " + currentData.name + " poster!");
         
-        // AR Logic
+        // Update Task Text
+        document.getElementById('ar-task-title').innerText = currentData.task.title;
+        document.getElementById('ar-task-desc').innerText = currentData.task.desc;
+
         const target = document.querySelector('#target-entity');
         const hud = document.getElementById('ar-hud');
         
@@ -219,8 +337,38 @@
       }
 
       function finishGame() {
-        document.getElementById('onion-dome').setAttribute('visible', 'true');
-        alert("Correct!");
+        document.getElementById('ar-object').setAttribute('visible', 'true'); // Show the "Dome"
+        document.getElementById('ar-hud').style.display = 'none';
+        setTimeout(() => { setupQuiz(); }, 1500);
+      }
+
+      // --- QUIZ LOGIC ---
+      function setupQuiz() {
+        const qScreen = document.getElementById('quiz-screen');
+        document.getElementById('quiz-question').innerText = currentData.quiz.q;
+        
+        const container = document.getElementById('quiz-options-container');
+        container.innerHTML = ""; // Clear old buttons
+
+        // Create buttons dynamically
+        currentData.quiz.options.forEach((opt, index) => {
+          let btn = document.createElement("button");
+          btn.className = "quiz-option";
+          btn.innerText = opt;
+          btn.onclick = () => checkAnswer(index);
+          container.appendChild(btn);
+        });
+
+        qScreen.style.display = 'block';
+      }
+
+      function checkAnswer(selectedIndex) {
+        if(selectedIndex === currentData.quiz.correct) {
+          document.getElementById('quiz-screen').style.display = 'none';
+          document.getElementById('victory-screen').style.display = 'flex';
+        } else {
+          alert("Incorrect. Try again!");
+        }
       }
     </script>
   </body>
