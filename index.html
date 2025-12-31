@@ -10,7 +10,7 @@
     <style>
       body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
       
-      /* --- 1. TITLE SCREEN --- */
+      /* TITLE SCREEN */
       #title-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
@@ -23,7 +23,7 @@
         cursor: pointer; box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
       }
 
-      /* --- 2. SELECTION CAROUSEL --- */
+      /* SELECTION CAROUSEL */
       #selection-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: #2c3e50; z-index: 2500; display: none;
@@ -40,44 +40,10 @@
       .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
       .prev-btn { left: 20px; } .next-btn { right: 20px; }
 
-      /* --- 3. THE FIX: 2D OVERLAY MENU --- */
-      /* This replaces the invisible 3D menu. It sits ON TOP of the camera video. */
-      #ar-ui-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 2000; display: none; /* Hidden by default */
-        flex-direction: column; justify-content: center; align-items: center;
-        background: rgba(0, 0, 0, 0.3); /* Slight dimming of background */
-      }
-      
-      .ar-menu-card {
-        background: rgba(26, 26, 46, 0.95);
-        border: 2px solid #f1c40f;
-        border-radius: 15px;
-        padding: 25px;
-        width: 280px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        box-shadow: 0 0 30px rgba(241, 196, 15, 0.3);
-      }
+      /* BUTTON TO GO BACK */
+      #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; pointer-events: auto; }
 
-      .ar-portrait {
-        width: 100px; height: 100px; border-radius: 50%;
-        border: 3px solid #f1c40f; object-fit: cover;
-        margin-bottom: 15px; background: #fff;
-      }
-
-      .ar-menu-btn {
-        width: 100%; padding: 15px; margin: 8px 0;
-        border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-        font-family: 'Lato', sans-serif; font-size: 16px;
-      }
-      .btn-blue { background: #34495e; color: white; transition: 0.2s; }
-      .btn-blue:active { background: #2c3e50; transform: scale(0.98); }
-      .btn-gold { background: #f1c40f; color: #1a1a2e; font-family: 'Cinzel', serif; margin-top: 15px; }
-      .btn-gold:active { transform: scale(0.98); }
-
-      /* --- 4. INFO PANEL (Popups) --- */
+      /* POPUP INFO */
       #holo-panel {
         position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
         background: rgba(16, 21, 30, 0.98); border: 2px solid #f1c40f;
@@ -87,14 +53,12 @@
       #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
       .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
-      /* --- 5. GAME HUD & QUIZ --- */
+      /* GAME HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
       .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
       #game-controls { display: none; margin-top: 10px; }
       .hud-btn { background: white; border: none; padding: 10px 20px; border-radius: 20px; margin: 5px; font-weight: bold; }
       
-      #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
-
       #quiz-screen { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px; padding: 20px; text-align: center; z-index: 4000; display: none; }
       .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
       #victory-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
@@ -113,7 +77,6 @@
       <div class="carousel-container">
         <button class="nav-btn prev-btn" onclick="moveSlide(-1)">&#10094;</button>
         <button class="nav-btn next-btn" onclick="moveSlide(1)">&#10095;</button>
-        
         <div class="carousel-card active" id="card-0">
             <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
             <h3>A.B. Hubback</h3> <button class="select-btn" onclick="openARMenu('hubback')">SELECT</button>
@@ -143,17 +106,6 @@
     
     <button id="ar-back-btn" onclick="goBackToMenu()">&#8592;</button>
 
-    <div id="ar-ui-overlay">
-      <div class="ar-menu-card">
-        <img id="overlay-portrait" class="ar-portrait" src="">
-        <h3 id="overlay-name" style="color:white; margin:0 0 10px 0; text-align:center; font-family:'Cinzel',serif;">Name</h3>
-        
-        <button class="ar-menu-btn btn-blue" onclick="showHolo('bg')">BACKGROUND</button>
-        <button class="ar-menu-btn btn-blue" onclick="showHolo('con')">CONTRIBUTION</button>
-        <button class="ar-menu-btn btn-gold" onclick="startTracking()">BUILD STRUCTURE ></button>
-      </div>
-    </div>
-
     <div id="holo-panel">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Title</h2>
@@ -161,35 +113,48 @@
       </div>
       <div id="holo-content">Text...</div>
     </div>
-
-    <div id="ar-hud">
-      <div class="hud-box">
-        <h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Searching...</h3>
-        <p id="ar-task-desc">Scan the poster to begin.</p>
-        <div id="game-controls">
-          <button class="hud-btn" onclick="alert('Incorrect style!')">Option A</button>
-          <button class="hud-btn" style="background:#2ecc71; color:white;" onclick="finishGame()">Option B</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="quiz-screen">
-      <h3 style="color:#1a1a2e; font-family:'Cinzel',serif;">History Quiz</h3>
-      <p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">...</p>
-      <div id="quiz-options-container"></div>
-    </div>
-    <div id="victory-screen">
-      <h1 style="font-family:'Cinzel',serif; font-size:40px;">CORRECT!</h1>
-      <button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button>
-    </div>
+    <div id="ar-hud"><div class="hud-box"><h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Searching...</h3><p id="ar-task-desc">Scan the poster to begin.</p><div id="game-controls"><button class="hud-btn" onclick="alert('Incorrect style!')">Option A</button><button class="hud-btn" style="background:#2ecc71; color:white;" onclick="finishGame()">Option B</button></div></div></div>
+    <div id="quiz-screen"><h3 style="color:#1a1a2e; font-family:'Cinzel',serif;">History Quiz</h3><p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">...</p><div id="quiz-options-container"></div></div>
+    <div id="victory-screen"><h1 style="font-family:'Cinzel',serif; font-size:40px;">CORRECT!</h1><button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button></div>
 
     <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
              color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
+             renderer="colorManagement: true, physicallyCorrectLights, sortObjects: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-light type="ambient" intensity="1.2"></a-light>
+      <a-light type="directional" position="0 0 1" intensity="1"></a-light>
+
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        
+        <a-entity id="ar-menu-group" position="0 0 -4" scale="2.5 2.5 2.5" visible="false" render-order="999">
+          
+          <a-box id="ar-3d-portrait" position="-0.4 0 0" width="0.6" height="0.8" depth="0.05"
+                 color="#ecf0f1"
+                 material="shader: flat; depthTest: false"
+                 animation="property: position; to: -0.4 0.05 0; dir: alternate; dur: 2000; loop: true">
+          </a-box>
+
+          <a-plane position="0.4 0 0" width="0.8" height="1" color="#000" opacity="0.5" material="depthTest: false"></a-plane>
+
+          <a-box class="clickable" position="0.4 0.3 0" width="0.7" height="0.15" depth="0.05" 
+                   color="#34495e" id="btn-3d-bg" material="depthTest: false">
+             <a-text value="BACKGROUND" align="center" color="#FFF" width="2" z-offset="0.06"></a-text>
+          </a-box>
+
+          <a-box class="clickable" position="0.4 0 0" width="0.7" height="0.15" depth="0.05" 
+                   color="#34495e" id="btn-3d-con" material="depthTest: false">
+             <a-text value="CONTRIBUTION" align="center" color="#FFF" width="2" z-offset="0.06"></a-text>
+          </a-box>
+
+          <a-box class="clickable" position="0.4 -0.3 0" width="0.7" height="0.15" depth="0.05" 
+                   color="#f1c40f" id="btn-3d-build" material="depthTest: false">
+             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="2" font="sourcecodepro" z-offset="0.06"></a-text>
+          </a-box>
+
+        </a-entity>
+      </a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
         <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
@@ -199,47 +164,47 @@
     </a-scene>
 
     <script>
-      // --- DB ---
+      // DATABASE
       const db = {
         hubback: {
           name: "Arthur Benison Hubback", img: "./assets/hubback.png",
-          bg: "Born on 13 April 1871 in Liverpool, England, Arthur Benison Hubback was a distinguished British Army officer and architect...",
-          con: "Hubback is celebrated for defining the architectural identity of British Malaya through the 'Indo-Saracenic' style...",
+          bg: "Born on 13 April 1871 in Liverpool, England...",
+          con: "Hubback is celebrated for defining the architectural identity...",
           task: { title: "Jamek Mosque", desc: "Spooner demands an Indo-Saracenic roof. Choose it!" },
           quiz: { q: "Hubback commanded troops in which war?", options: ["World War II", "World War I", "Boer War"], correct: 1 }
         },
         norman: {
           name: "A.C. Norman", img: "./assets/norman.png",
-          bg: "Arthur Charles Alfred Norman (1858-1944) was a British architect who played a foundational role...",
-          con: "Norman is credited with the ground plan of the iconic Sultan Abdul Samad Building...",
+          bg: "Arthur Charles Alfred Norman (1858-1944)...",
+          con: "Norman is credited with the ground plan...",
           task: { title: "Sultan Abdul Samad", desc: "Norman drew the floor plan. Now add the roof!" },
           quiz: { q: "Which building's ground plan is credited to Norman?", options: ["National Mosque", "Sultan Abdul Samad Building", "Stadium Merdeka"], correct: 1 }
         },
         bidwell: {
           name: "R.A.J Bidwell", img: "./assets/bidwell.png",
-          bg: "Regent Alfred John Bidwell (1869-1918) was a talented architect born in South London...",
-          con: "Bidwell's most significant contribution was the visual design of the Sultan Abdul Samad Building...",
+          bg: "Regent Alfred John Bidwell (1869-1918)...",
+          con: "Bidwell's most significant contribution...",
           task: { title: "Change the Style", desc: "Spooner rejected Renaissance. Switch to Indo-Saracenic!" },
           quiz: { q: "Who instructed Bidwell to rework the design?", options: ["Hubback", "Spooner", "Swettenham"], correct: 1 }
         },
         spooner: {
           name: "Charles Edwin Spooner", img: "./assets/spooner.png",
-          bg: "Charles Edwin Spooner (1853-1909) was a British engineer born in North Wales...",
-          con: "Spooner was the mastermind behind the adoption of the 'Islamic' style...",
+          bg: "Charles Edwin Spooner (1853-1909)...",
+          con: "Spooner was the mastermind behind the adoption...",
           task: { title: "State Engineer's Order", desc: "I want an Islamic Style roof. Build it!" },
           quiz: { q: "Spooner described the new architectural style as:", options: ["Gothic", "Modernist", "Islamic/Mahometan"], correct: 2 }
         },
         jewkes: {
           name: "Stanley Edward Jewkes", img: "./assets/jewkes.png",
-          bg: "Stanley Edward Jewkes (1913-2011) was an American-born architect and engineer...",
-          con: "Jewkes' crowning achievement is the design and construction of Stadium Merdeka...",
+          bg: "Stanley Edward Jewkes (1913-2011)...",
+          con: "Jewkes' crowning achievement is the design and construction...",
           task: { title: "Stadium Merdeka", desc: "Build the site for Independence Day!" },
           quiz: { q: "What historic event happened at Stadium Merdeka?", options: ["Commonwealth Games", "Declaration of Independence", "Malaysia Day"], correct: 1 }
         },
         baharuddin: {
           name: "Datuk Baharuddin Abu Kassim", img: "./assets/baharuddin.png",
-          bg: "Born in 1929, Datuk Baharuddin Abu Kassim is a pioneering Malay architect...",
-          con: "Baharuddin is best known as the chief architect of the National Mosque...",
+          bg: "Born in 1929, Datuk Baharuddin Abu Kassim...",
+          con: "Baharuddin is best known as the chief architect...",
           task: { title: "National Mosque", desc: "Construct the 'Umbrella Dome'!" },
           quiz: { q: "What does the National Mosque's main dome resemble?", options: ["A Pyramid", "An Onion", "A Semi-opened Umbrella"], correct: 2 }
         }
@@ -264,26 +229,31 @@
 
       function openARMenu(id) {
         currentData = db[id];
-        
-        // Hide Selection Screen
         document.getElementById('selection-screen').style.display = 'none';
-        
-        // Show Global Back Button
         document.getElementById('ar-back-btn').style.display = 'block';
 
-        // UPDATE AND SHOW THE HTML OVERLAY
-        const overlay = document.getElementById('ar-ui-overlay');
-        document.getElementById('overlay-portrait').src = currentData.img;
-        document.getElementById('overlay-name').innerText = currentData.name;
-        overlay.style.display = 'flex'; // Use Flex to center it
+        // ACTIVATE 3D MENU
+        const menu = document.querySelector('#ar-menu-group');
+        menu.setAttribute('visible', 'true');
+        
+        // Try to set image (Using src if available, else standard)
+        // Note: For now, we keep it simple white/grey to ensure visibility first
+        // document.querySelector('#ar-3d-portrait').setAttribute('src', currentData.img);
       }
 
       function goBackToMenu() {
-        document.getElementById('ar-ui-overlay').style.display = 'none';
+        document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
         document.getElementById('ar-back-btn').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
         closeHolo();
       }
+
+      // 3D BUTTON LISTENERS
+      // We must attach these after A-Frame loads, but simple onclick in HTML is hard for A-Frame entities.
+      // We use standard JS listeners:
+      document.querySelector('#btn-3d-bg').addEventListener('click', function () { showHolo('bg'); });
+      document.querySelector('#btn-3d-con').addEventListener('click', function () { showHolo('con'); });
+      document.querySelector('#btn-3d-build').addEventListener('click', function () { startTracking(); });
 
       function showHolo(type) {
         const panel = document.getElementById('holo-panel');
@@ -299,23 +269,20 @@
       function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
 
       function startTracking() {
-        // Hide the Menu Overlay
-        document.getElementById('ar-ui-overlay').style.display = 'none';
+        document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
         document.getElementById('ar-back-btn').style.display = 'none';
         closeHolo();
         
-        // Show HUD
         const hud = document.getElementById('ar-hud');
         hud.style.display = 'block';
         document.getElementById('ar-task-title').innerText = "Scanning...";
         document.getElementById('ar-task-desc').innerText = "Point camera at the poster.";
         
-        // Activate Listeners
         const target = document.querySelector('#target-entity');
-        // Clear previous listeners to avoid duplicates
+        // Reset Listeners
         const newTarget = target.cloneNode(true);
         target.parentNode.replaceChild(newTarget, target);
-        
+
         newTarget.addEventListener("targetFound", () => {
           document.getElementById('ar-task-title').innerText = currentData.task.title;
           document.getElementById('ar-task-desc').innerText = currentData.task.desc;
