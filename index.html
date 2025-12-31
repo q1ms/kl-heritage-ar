@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+      /* This makes a simple button appear at the bottom */
+      #ui-layer {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display: none; /* Hidden until image is found */
+      }
+      button {
+        padding: 15px;
+        font-size: 18px;
+        background: #D52B1E; /* Red like the bricks */
+        color: white;
+        border: none;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="ui-layer">
+      <button onclick="checkAnswer()">Is this Indo-Saracenic?</button>
+    </div>
+
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
+        
+        <a-box position="0 0 0" scale="0.5 0.5 0.5" color="blue" animation="property: rotation; to: 0 360 0; dur: 2000; loop: true"></a-box>
+      
+      </a-entity>
+    </a-scene>
+
+    <script>
+      // 1. Detect when the image is found
+      const target = document.querySelector('#target-entity');
+      const ui = document.querySelector('#ui-layer');
+
+      target.addEventListener("targetFound", event => {
+        console.log("Image Found!");
+        ui.style.display = "block"; // Show the button
+      });
+
+      target.addEventListener("targetLost", event => {
+        console.log("Image Lost!");
+        ui.style.display = "none"; // Hide the button
+      });
+
+      // 2. The Game Logic
+      function checkAnswer() {
+        alert("Correct! This style combines Mughal and British architecture.");
+      }
+    </script>
+  </body>
+</html>
