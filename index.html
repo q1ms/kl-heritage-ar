@@ -9,64 +9,37 @@
 
     <style>
       body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
-      
-      /* UTILITIES */
       .hidden { display: none !important; }
-      .fade-in { animation: fadeIn 0.5s; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-      /* SCREEN 1: TITLE */
-      #title-screen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
-        z-index: 3000; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; color: #f1c40f; text-align: center;
+      
+      /* UI OVERLAYS (HTML) */
+      #title-screen, #selection-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        text-align: center;
       }
-      .start-btn {
-        background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px;
-        font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px;
-        cursor: pointer; box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
-      }
-
-      /* SCREEN 2: CAROUSEL SELECTION */
-      #selection-screen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #2c3e50; z-index: 2500; display: none;
-        flex-direction: column; justify-content: center; align-items: center;
-      }
+      #title-screen { background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%); color: #f1c40f; }
+      #selection-screen { background: #2c3e50; display: none; }
+      
+      .start-btn { background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px; font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px; cursor: pointer; }
+      
+      /* CAROUSEL */
       .carousel-container { position: relative; width: 100%; height: 70%; display: flex; justify-content: center; align-items: center; }
-      .carousel-card {
-        background: white; width: 260px; padding: 20px; border-radius: 20px;
-        text-align: center; border: 4px solid #f1c40f;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        display: none; flex-direction: column; align-items: center;
-      }
-      .carousel-card.active { display: flex; } 
-      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 2px solid #eee; }
-      .carousel-card h3 { font-family: 'Cinzel', serif; font-size: 22px; color: #1a1a2e; margin: 0 0 10px 0; }
-      .select-btn { background: #1a1a2e; color: #f1c40f; border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-      .nav-btn {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        background: rgba(241, 196, 15, 0.8); color: #1a1a2e; width: 50px; height: 50px;
-        border-radius: 50%; border: none; font-size: 24px; font-weight: bold; cursor: pointer; z-index: 10;
-        display: flex; justify-content: center; align-items: center;
-      }
-      .prev-btn { left: 20px; }
-      .next-btn { right: 20px; }
+      .carousel-card { background: white; width: 260px; padding: 20px; border-radius: 20px; text-align: center; border: 4px solid #f1c40f; display: none; flex-direction: column; align-items: center; }
+      .carousel-card.active { display: flex; }
+      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+      .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
+      .prev-btn { left: 20px; } .next-btn { right: 20px; }
+      .select-btn { background: #1a1a2e; color: #f1c40f; border: none; padding: 10px 30px; border-radius: 20px; margin-top: 10px; cursor:pointer; }
 
-      /* HOLOGRAPHIC INFO PANEL (The Glass Overlay for Text) */
+      /* HOLOGRAPHIC INFO PANEL */
       #holo-panel {
         position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
-        background: rgba(16, 21, 30, 0.9); border: 2px solid #f1c40f;
-        border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
-        display: none; flex-direction: column; z-index: 2200;
-        backdrop-filter: blur(5px); box-shadow: 0 0 30px rgba(241, 196, 15, 0.3);
+        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f; border-radius: 15px;
+        color: #ecf0f1; padding: 20px; box-sizing: border-box; display: none;
+        flex-direction: column; z-index: 5000;
       }
       #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
-      .holo-close {
-        align-self: flex-end; background: #e74c3c; color: white; border: none;
-        padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight:bold;
-      }
+      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
       /* GAME HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
@@ -74,71 +47,53 @@
       #game-controls { display: none; margin-top: 10px; }
       .hud-btn { background: white; border: none; padding: 10px 20px; border-radius: 20px; margin: 5px; font-weight: bold; }
 
+      /* BACK BUTTON */
+      #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
+
       /* QUIZ & VICTORY */
-      #quiz-screen {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px;
-        padding: 20px; text-align: center; z-index: 4000; display: none;
-        box-shadow: 0 0 50px rgba(0,0,0,0.5);
-      }
+      #quiz-screen { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px; padding: 20px; text-align: center; z-index: 4000; display: none; }
       .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
-      #victory-screen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none;
-        flex-direction: column; justify-content: center; align-items: center; color: white;
-      }
-      
-      /* Back Button for AR Mode */
-      #ar-back-btn {
-        position: fixed; top: 20px; left: 20px; z-index: 2000; display: none;
-        background: rgba(0,0,0,0.5); color: white; border: none;
-        padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer;
-      }
+      #victory-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
+
     </style>
   </head>
 
   <body>
 
     <div id="title-screen">
-      <h1 style="font-family:'Cinzel',serif; font-size:32px; padding:0 20px;">The Life of Malaysia's Historical Figures</h1>
+      <h1 style="font-family:'Cinzel',serif; font-size:32px;">The Life of Malaysia's Historical Figures</h1>
       <button class="start-btn" onclick="goToSelection()">ENTER MUSEUM</button>
     </div>
 
     <div id="selection-screen">
-      <h2 style="color:white; font-family:'Cinzel',serif; margin-bottom:10px;">Select Figure</h2>
+      <h2 style="color:white; font-family:'Cinzel',serif;">Select Figure</h2>
       <div class="carousel-container">
         <button class="nav-btn prev-btn" onclick="moveSlide(-1)">&#10094;</button>
         <button class="nav-btn next-btn" onclick="moveSlide(1)">&#10095;</button>
         
-        <div class="carousel-card active fade-in" id="card-0">
+        <div class="carousel-card active" id="card-0">
           <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
-          <h3>A.B. Hubback</h3>
-          <button class="select-btn" onclick="openARProfile('hubback')">SELECT</button>
+          <h3>A.B. Hubback</h3> <button class="select-btn" onclick="openARMenu('hubback')">SELECT</button>
         </div>
-        <div class="carousel-card fade-in" id="card-1">
+        <div class="carousel-card" id="card-1">
           <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
-          <h3>A.C. Norman</h3>
-          <button class="select-btn" onclick="openARProfile('norman')">SELECT</button>
+          <h3>A.C. Norman</h3> <button class="select-btn" onclick="openARMenu('norman')">SELECT</button>
         </div>
-        <div class="carousel-card fade-in" id="card-2">
+        <div class="carousel-card" id="card-2">
           <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/200?text=Bidwell'">
-          <h3>R.A.J Bidwell</h3>
-          <button class="select-btn" onclick="openARProfile('bidwell')">SELECT</button>
+          <h3>R.A.J Bidwell</h3> <button class="select-btn" onclick="openARMenu('bidwell')">SELECT</button>
         </div>
-        <div class="carousel-card fade-in" id="card-3">
+        <div class="carousel-card" id="card-3">
           <img src="./assets/spooner.png" onerror="this.src='https://via.placeholder.com/200?text=Spooner'">
-          <h3>Charles Spooner</h3>
-          <button class="select-btn" onclick="openARProfile('spooner')">SELECT</button>
+          <h3>Charles Spooner</h3> <button class="select-btn" onclick="openARMenu('spooner')">SELECT</button>
         </div>
-        <div class="carousel-card fade-in" id="card-4">
+        <div class="carousel-card" id="card-4">
           <img src="./assets/jewkes.png" onerror="this.src='https://via.placeholder.com/200?text=Jewkes'">
-          <h3>Stanley Jewkes</h3>
-          <button class="select-btn" onclick="openARProfile('jewkes')">SELECT</button>
+          <h3>Stanley Jewkes</h3> <button class="select-btn" onclick="openARMenu('jewkes')">SELECT</button>
         </div>
-        <div class="carousel-card fade-in" id="card-5">
+        <div class="carousel-card" id="card-5">
           <img src="./assets/baharuddin.png" onerror="this.src='https://via.placeholder.com/200?text=Baharuddin'">
-          <h3>Datuk Baharuddin</h3>
-          <button class="select-btn" onclick="openARProfile('baharuddin')">SELECT</button>
+          <h3>Datuk Baharuddin</h3> <button class="select-btn" onclick="openARMenu('baharuddin')">SELECT</button>
         </div>
       </div>
     </div>
@@ -166,46 +121,36 @@
 
     <div id="quiz-screen">
       <h3 style="color:#1a1a2e; font-family:'Cinzel',serif;">History Quiz</h3>
-      <p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">Question goes here...</p>
+      <p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">...</p>
       <div id="quiz-options-container"></div>
     </div>
-
     <div id="victory-screen">
       <h1 style="font-family:'Cinzel',serif; font-size:40px;">CORRECT!</h1>
       <button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" 
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;" 
              cursor="rayOrigin: mouse" 
              raycaster="objects: .clickable" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
 
-      <a-assets>
-         <img id="btn-bg-texture" src="https://upload.wikimedia.org/wikipedia/commons/4/48/Dark_Blue_gradient_background.jpg"> 
-      </a-assets>
-
       <a-camera position="0 0 0" look-controls="enabled: false">
         
-        <a-entity id="ar-menu-group" position="0 0 -1.5" visible="false">
+        <a-entity id="ar-menu-group" position="0 0 -2" visible="false">
           
-          <a-image id="ar-3d-portrait" position="-0.3 0 0" width="0.5" height="0.6" src="" 
-                   animation="property: position; to: -0.3 0.05 0; dir: alternate; dur: 2000; loop: true"></a-image>
+          <a-image id="ar-3d-portrait" position="-0.4 0 0" width="0.6" height="0.8" src=""></a-image>
 
-          <a-plane class="clickable" position="0.3 0.2 0" width="0.55" height="0.15" color="#1a1a2e" opacity="0.9"
-                   id="btn-3d-bg"
-                   animation="property: scale; to: 1.05 1.05 1; dir: alternate; dur: 1500; loop: true">
-             <a-text value="Background" align="center" color="#f1c40f" width="2"></a-text>
+          <a-plane class="clickable" position="0.4 0.25 0" width="0.7" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-bg">
+             <a-text value="BACKGROUND" align="center" color="#f1c40f" width="2"></a-text>
           </a-plane>
 
-          <a-plane class="clickable" position="0.3 0 0" width="0.55" height="0.15" color="#1a1a2e" opacity="0.9"
-                   id="btn-3d-con">
-             <a-text value="Contribution" align="center" color="#f1c40f" width="2"></a-text>
+          <a-plane class="clickable" position="0.4 0 0" width="0.7" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-con">
+             <a-text value="CONTRIBUTION" align="center" color="#f1c40f" width="2"></a-text>
           </a-plane>
 
-          <a-plane class="clickable" position="0.3 -0.2 0" width="0.55" height="0.15" color="#f1c40f" opacity="0.9"
-                   id="btn-3d-build">
-             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="1.8" font="sourcecodepro"></a-text>
+          <a-plane class="clickable" position="0.4 -0.25 0" width="0.7" height="0.15" color="#f1c40f" opacity="0.9" id="btn-3d-build">
+             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="2" font="sourcecodepro"></a-text>
           </a-plane>
 
         </a-entity>
@@ -220,7 +165,7 @@
     </a-scene>
 
     <script>
-      // --- DATABASE ---
+      // --- DB ---
       const db = {
         hubback: {
           name: "Arthur Benison Hubback", img: "./assets/hubback.png",
@@ -270,7 +215,7 @@
       let slideIndex = 0;
       const totalSlides = 6;
 
-      // --- LOGIC ---
+      // --- HTML LOGIC ---
       function goToSelection() {
         document.getElementById('title-screen').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
@@ -284,20 +229,18 @@
         document.getElementById('card-' + slideIndex).classList.add('active');
       }
 
-      // --- ACTIVATE 3D AR PROFILE ---
-      function openARProfile(id) {
+      // --- AR MENU LOGIC ---
+      function openARMenu(id) {
         currentData = db[id];
         
-        // 1. Hide HTML Menus
+        // Hide HTML, Show 3D Menu
         document.getElementById('selection-screen').style.display = 'none';
         document.getElementById('ar-back-btn').style.display = 'block';
-
-        // 2. Update the 3D Object Textures
-        // Note: A-Frame image src requires the path directly
-        const portrait = document.querySelector('#ar-3d-portrait');
-        portrait.setAttribute('src', currentData.img);
         
-        // 3. Make the 3D Menu Visible
+        // Update 3D Portrait
+        document.querySelector('#ar-3d-portrait').setAttribute('src', currentData.img);
+        
+        // Make 3D Menu Visible
         document.querySelector('#ar-menu-group').setAttribute('visible', 'true');
       }
 
@@ -308,62 +251,53 @@
         closeHolo();
       }
 
-      // --- 3D BUTTON LISTENERS ---
-      // We add event listeners to the 3D objects
-      
+      // --- 3D BUTTON CLICKS ---
+      // We attach click listeners to the 3D planes
       document.querySelector('#btn-3d-bg').addEventListener('click', function (evt) {
         showHolo('bg');
       });
-
+      
       document.querySelector('#btn-3d-con').addEventListener('click', function (evt) {
         showHolo('con');
       });
 
       document.querySelector('#btn-3d-build').addEventListener('click', function (evt) {
-        startBuildingTask();
+        startTracking();
       });
 
-      // --- HOLOGRAPHIC INFO PANELS ---
+      // --- HOLOGRAPHIC PANEL ---
       function showHolo(type) {
         const panel = document.getElementById('holo-panel');
-        const title = document.getElementById('holo-title');
-        const content = document.getElementById('holo-content');
-        
         panel.style.display = 'flex';
         if (type === 'bg') {
-          title.innerText = "Background History";
-          content.innerText = currentData.bg;
+          document.getElementById('holo-title').innerText = "Background";
+          document.getElementById('holo-content').innerText = currentData.bg;
         } else {
-          title.innerText = "Contribution";
-          content.innerText = currentData.con;
+          document.getElementById('holo-title').innerText = "Contribution";
+          document.getElementById('holo-content').innerText = currentData.con;
         }
       }
+      function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
 
-      function closeHolo() {
-        document.getElementById('holo-panel').style.display = 'none';
-      }
-
-      // --- START GAME TASK ---
-      function startBuildingTask() {
-        // 1. Hide the Floating Menu
+      // --- GAME START (ENABLE TRACKING) ---
+      function startTracking() {
+        // Hide 3D Menu
         document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
         document.getElementById('ar-back-btn').style.display = 'none';
         
-        // 2. Show the Game HUD
+        // Show HUD
         const hud = document.getElementById('ar-hud');
         hud.style.display = 'block';
         document.getElementById('ar-task-title').innerText = "Scanning...";
         document.getElementById('ar-task-desc').innerText = "Point camera at the poster.";
         
-        // 3. Setup Listener for Poster
+        // Setup Tracking Listener
         const target = document.querySelector('#target-entity');
-        
         target.addEventListener("targetFound", () => {
           document.getElementById('ar-task-title').innerText = currentData.task.title;
           document.getElementById('ar-task-desc').innerText = currentData.task.desc;
           document.getElementById('game-controls').style.display = 'block';
         });
-
         target.addEventListener("targetLost", () => {
           document.getElementById('ar-task-title').innerText = "Scanning...";
           document.getElementById('ar-task-desc').innerText = "Point camera at the poster.";
@@ -374,7 +308,7 @@
       function finishGame() {
         document.getElementById('ar-object').setAttribute('visible', 'true');
         document.getElementById('ar-hud').style.display = 'none';
-        setTimeout(() => { setupQuiz(); }, 1500);
+        setTimeout(setupQuiz, 1500);
       }
 
       function setupQuiz() {
@@ -382,7 +316,6 @@
         document.getElementById('quiz-question').innerText = currentData.quiz.q;
         const container = document.getElementById('quiz-options-container');
         container.innerHTML = "";
-        
         currentData.quiz.options.forEach((opt, index) => {
           let btn = document.createElement("button");
           btn.className = "quiz-option";
