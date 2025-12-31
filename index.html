@@ -2,46 +2,83 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Debug Mode</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
+      /* FORCE 3D CANVAS TO BE VISIBLE */
       body { margin: 0; overflow: hidden; }
-      /* A button to prove HTML overlay still works */
-      #debug-btn {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        padding: 15px; background: white; border: none; z-index: 1000;
+      #debug-console {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100px;
+        background: rgba(0,0,0,0.5); color: #00FF00; font-family: monospace;
+        z-index: 9999; padding: 10px; pointer-events: none;
+      }
+      /* This ensures the 3D scene sits ON TOP of the camera video */
+      canvas.a-canvas {
+        position: relative !important;
+        z-index: 999 !important; 
+      }
+      video {
+        position: absolute !important;
+        top: 0; left: 0;
+        z-index: 1 !important; /* Video goes behind */
       }
     </style>
   </head>
   <body>
 
-    <button id="debug-btn" onclick="alert('HTML is working')">HTML Overlay Test</button>
+    <div id="debug-console">
+      > App Starting...<br>
+    </div>
 
-    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+    <script>
+      function log(msg) {
+        document.getElementById('debug-console').innerHTML += "> " + msg + "<br>";
+        console.log(msg);
+      }
+
+      window.onload = function() {
+        log("Window Loaded.");
+        if (!window.AFRAME) log("ERROR: A-Frame failed to load.");
+        else log("A-Frame Detected.");
+        
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('loaded', () => {
+          log("Scene Loaded. WebGL is ready.");
+        });
+        scene.addEventListener('arReady', () => {
+          log("AR System Ready. Scanning...");
+        });
+        scene.addEventListener('arError', (ev) => {
+          log("AR ERROR: " + JSON.stringify(ev.detail));
+        });
+      };
+    </script>
+
+    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind; autoStart: true;" 
              color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
+             renderer="colorManagement: true, physicallyCorrectLights, alpha: true"
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
-      <a-light type="ambient" intensity="1"></a-light>
-      <a-light type="directional" position="0 0 1" intensity="1"></a-light>
+      <a-light type="ambient" intensity="2"></a-light>
 
       <a-camera position="0 0 0" look-controls="enabled: false">
         
-        <a-entity position="0 0 -2">
-            
-            <a-box position="-0.6 0 0" color="red" depth="0.1" height="0.5" width="0.5"
-                   material="shader: flat; depthTest: false; depthWrite: false"></a-box>
+        <a-box position="0 0 -5" scale="1 1 1" color="red"
+               material="shader: flat; depthTest: false; depthWrite: false"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000">
+        </a-box>
+        
+        <a-text value="HUD WORKING" color="white" align="center" position="0 0.8 -5" scale="2 2 2"></a-text>
 
-            <a-image position="0.6 0 0" height="0.6" width="0.4"
-                     src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png"
-                     material="depthTest: false; depthWrite: false; transparent: true"></a-image>
-
-            <a-text value="FLOATING AR MENU" align="center" position="0 0.5 0" scale="1.5 1.5 1.5"
-                    color="#FFF"></a-text>
-
-        </a-entity>
       </a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-box position="0 0 0.5" color="green"></a-box>
+      </a-entity>
+
     </a-scene>
 
   </body>
