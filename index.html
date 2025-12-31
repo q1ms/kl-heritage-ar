@@ -10,47 +10,58 @@
     <style>
       body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
       .hidden { display: none !important; }
-      
-      /* UI OVERLAYS (HTML) */
-      #title-screen, #selection-screen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
-        text-align: center;
+
+      /* --- SCREEN 1: TITLE --- */
+      #title-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
+        z-index: 3000; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; color: #f1c40f; text-align: center;
       }
-      #title-screen { background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%); color: #f1c40f; }
-      #selection-screen { background: #2c3e50; display: none; }
-      
-      .start-btn { background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px; font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px; cursor: pointer; }
-      
-      /* CAROUSEL */
+      .start-btn {
+        background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px;
+        font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px;
+        cursor: pointer; box-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+      }
+
+      /* --- SCREEN 2: CAROUSEL --- */
+      #selection-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #2c3e50; z-index: 2500; display: none;
+        flex-direction: column; justify-content: center; align-items: center;
+      }
       .carousel-container { position: relative; width: 100%; height: 70%; display: flex; justify-content: center; align-items: center; }
-      .carousel-card { background: white; width: 260px; padding: 20px; border-radius: 20px; text-align: center; border: 4px solid #f1c40f; display: none; flex-direction: column; align-items: center; }
-      .carousel-card.active { display: flex; }
-      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+      .carousel-card {
+        background: white; width: 260px; padding: 20px; border-radius: 20px;
+        text-align: center; border: 4px solid #f1c40f; display: none; flex-direction: column; align-items: center;
+      }
+      .carousel-card.active { display: flex; } 
+      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 2px solid #eee; }
+      .select-btn { background: #1a1a2e; color: #f1c40f; border: none; padding: 10px 30px; border-radius: 20px; margin-top: 10px; cursor:pointer; }
       .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
       .prev-btn { left: 20px; } .next-btn { right: 20px; }
-      .select-btn { background: #1a1a2e; color: #f1c40f; border: none; padding: 10px 30px; border-radius: 20px; margin-top: 10px; cursor:pointer; }
 
-      /* HOLOGRAPHIC INFO PANEL */
+      /* --- HOLOGRAPHIC INFO PANEL (Text Overlay) --- */
       #holo-panel {
         position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
-        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f; border-radius: 15px;
-        color: #ecf0f1; padding: 20px; box-sizing: border-box; display: none;
-        flex-direction: column; z-index: 5000;
+        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
+        border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
+        display: none; flex-direction: column; z-index: 5000;
+        box-shadow: 0 0 30px rgba(241, 196, 15, 0.5);
       }
       #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
       .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
-      /* GAME HUD */
+      /* --- GAME HUD & BUTTONS --- */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
       .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
       #game-controls { display: none; margin-top: 10px; }
       .hud-btn { background: white; border: none; padding: 10px 20px; border-radius: 20px; margin: 5px; font-weight: bold; }
-
-      /* BACK BUTTON */
+      
+      /* --- BACK BUTTON (For AR Mode) --- */
       #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
 
-      /* QUIZ & VICTORY */
+      /* --- QUIZ & VICTORY --- */
       #quiz-screen { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px; padding: 20px; text-align: center; z-index: 4000; display: none; }
       .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
       #victory-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
@@ -129,7 +140,7 @@
       <button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;" 
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
              cursor="rayOrigin: mouse" 
              raycaster="objects: .clickable" 
              vr-mode-ui="enabled: false" 
@@ -137,20 +148,23 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false">
         
-        <a-entity id="ar-menu-group" position="0 0 -2" visible="false">
+        <a-entity id="ar-menu-group" position="0 0 -1.2" visible="false">
           
-          <a-image id="ar-3d-portrait" position="-0.4 0 0" width="0.6" height="0.8" src=""></a-image>
+          <a-image id="ar-3d-portrait" position="-0.35 0 0" width="0.5" height="0.7" 
+                   src="https://via.placeholder.com/300"
+                   animation="property: position; to: -0.35 0.05 0; dir: alternate; dur: 2000; loop: true">
+          </a-image>
 
-          <a-plane class="clickable" position="0.4 0.25 0" width="0.7" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-bg">
-             <a-text value="BACKGROUND" align="center" color="#f1c40f" width="2"></a-text>
+          <a-plane class="clickable" position="0.35 0.25 0" width="0.6" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-bg">
+             <a-text value="BACKGROUND" align="center" color="#f1c40f" width="2" z-offset="0.01"></a-text>
           </a-plane>
 
-          <a-plane class="clickable" position="0.4 0 0" width="0.7" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-con">
-             <a-text value="CONTRIBUTION" align="center" color="#f1c40f" width="2"></a-text>
+          <a-plane class="clickable" position="0.35 0 0" width="0.6" height="0.15" color="#1a1a2e" opacity="0.9" id="btn-3d-con">
+             <a-text value="CONTRIBUTION" align="center" color="#f1c40f" width="2" z-offset="0.01"></a-text>
           </a-plane>
 
-          <a-plane class="clickable" position="0.4 -0.25 0" width="0.7" height="0.15" color="#f1c40f" opacity="0.9" id="btn-3d-build">
-             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="2" font="sourcecodepro"></a-text>
+          <a-plane class="clickable" position="0.35 -0.25 0" width="0.6" height="0.15" color="#f1c40f" opacity="0.9" id="btn-3d-build">
+             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="2" font="sourcecodepro" z-offset="0.01"></a-text>
           </a-plane>
 
         </a-entity>
@@ -165,7 +179,7 @@
     </a-scene>
 
     <script>
-      // --- DB ---
+      // --- DATABASE ---
       const db = {
         hubback: {
           name: "Arthur Benison Hubback", img: "./assets/hubback.png",
@@ -215,7 +229,7 @@
       let slideIndex = 0;
       const totalSlides = 6;
 
-      // --- HTML LOGIC ---
+      // --- HTML UI LOGIC ---
       function goToSelection() {
         document.getElementById('title-screen').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
@@ -233,14 +247,14 @@
       function openARMenu(id) {
         currentData = db[id];
         
-        // Hide HTML, Show 3D Menu
+        // Switch to AR Mode
         document.getElementById('selection-screen').style.display = 'none';
         document.getElementById('ar-back-btn').style.display = 'block';
         
         // Update 3D Portrait
         document.querySelector('#ar-3d-portrait').setAttribute('src', currentData.img);
         
-        // Make 3D Menu Visible
+        // Show the 3D Menu
         document.querySelector('#ar-menu-group').setAttribute('visible', 'true');
       }
 
@@ -251,21 +265,12 @@
         closeHolo();
       }
 
-      // --- 3D BUTTON CLICKS ---
-      // We attach click listeners to the 3D planes
-      document.querySelector('#btn-3d-bg').addEventListener('click', function (evt) {
-        showHolo('bg');
-      });
-      
-      document.querySelector('#btn-3d-con').addEventListener('click', function (evt) {
-        showHolo('con');
-      });
+      // --- 3D BUTTON LISTENERS ---
+      document.querySelector('#btn-3d-bg').addEventListener('click', function (evt) { showHolo('bg'); });
+      document.querySelector('#btn-3d-con').addEventListener('click', function (evt) { showHolo('con'); });
+      document.querySelector('#btn-3d-build').addEventListener('click', function (evt) { startTracking(); });
 
-      document.querySelector('#btn-3d-build').addEventListener('click', function (evt) {
-        startTracking();
-      });
-
-      // --- HOLOGRAPHIC PANEL ---
+      // --- HOLOGRAPHIC PANELS ---
       function showHolo(type) {
         const panel = document.getElementById('holo-panel');
         panel.style.display = 'flex';
@@ -279,19 +284,20 @@
       }
       function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
 
-      // --- GAME START (ENABLE TRACKING) ---
+      // --- START GAME (Enable Tracking) ---
       function startTracking() {
         // Hide 3D Menu
         document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
         document.getElementById('ar-back-btn').style.display = 'none';
+        closeHolo();
         
-        // Show HUD
+        // Show Scan HUD
         const hud = document.getElementById('ar-hud');
         hud.style.display = 'block';
         document.getElementById('ar-task-title').innerText = "Scanning...";
         document.getElementById('ar-task-desc').innerText = "Point camera at the poster.";
         
-        // Setup Tracking Listener
+        // Setup Tracking
         const target = document.querySelector('#target-entity');
         target.addEventListener("targetFound", () => {
           document.getElementById('ar-task-title').innerText = currentData.task.title;
