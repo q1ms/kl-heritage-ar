@@ -81,6 +81,8 @@
       /* SCREEN 4: AR HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
       .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
+      /* Hide game buttons initially until target is found */
+      #game-controls { display: none; margin-top: 10px; }
 
       /* SCREEN 5: QUIZ */
       #quiz-screen {
@@ -168,11 +170,12 @@
 
     <div id="ar-hud">
       <div class="hud-box">
-        <h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Challenge</h3>
-        <p id="ar-task-desc">Task description...</p>
-        <div style="margin-top:10px;">
-          <button class="menu-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="alert('Incorrect style!')">Option A</button>
-          <button class="menu-btn highlight-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="finishGame()">Option B</button>
+        <h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Searching...</h3>
+        <p id="ar-task-desc">Scan the poster to begin.</p>
+        
+        <div id="game-controls">
+          <button class="menu-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="alert('Incorrect style! Try again.')">Option A</button>
+          <button class="menu-btn highlight-btn" style="width:auto; display:inline-block; padding:8px 15px;" onclick="finishGame()">Option B (Correct)</button>
         </div>
       </div>
     </div>
@@ -191,22 +194,24 @@
 
     <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      
       <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
         <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
         <a-box position="0 0.4 0" width="0.6" depth="0.6" height="0.1" color="#555"></a-box>
+        
         <a-sphere id="ar-object" position="0 0.8 0" radius="0.35" color="#FFD700" visible="false"></a-sphere>
       </a-entity>
     </a-scene>
 
     <script>
-      // --- DATABASE (Populated with your text) ---
+      // --- DATABASE ---
       const db = {
         hubback: {
           name: "Arthur Benison Hubback",
           img: "./assets/hubback.png",
           bg: "Born: 13 April 1871 in Liverpool. British Army officer and architect. He served as Brigadier General in WWI and commanded troops in France.",
           con: "Designed the Jamek Mosque, KL Railway Station, and National Textile Museum. Introduced Indo-Saracenic style (Onion Domes) to Malaya.",
-          task: { title: "Jamek Mosque Design", desc: "Spooner demands an Indo-Saracenic roof. Choose it!" },
+          task: { title: "Jamek Mosque", desc: "Spooner demands an Indo-Saracenic roof. Choose it!" },
           quiz: {
             q: "Hubback commanded troops in which war?",
             options: ["World War II", "World War I", "Boer War"],
@@ -316,29 +321,50 @@
         document.getElementById('info-box').classList.remove('active');
       }
 
-      // --- AR GAME ---
+      // --- AR GAME FUNCTION (The Fixed Logic) ---
       function startAR() {
+        // 1. Hide Profile
         document.getElementById('profile-screen').style.display = 'none';
-        alert("Mission: Point camera at the " + currentData.name + " poster!");
         
-        // Update Task Text
-        document.getElementById('ar-task-title').innerText = currentData.task.title;
-        document.getElementById('ar-task-desc').innerText = currentData.task.desc;
-
-        const target = document.querySelector('#target-entity');
+        // 2. Show HUD immediately (No Alert!)
         const hud = document.getElementById('ar-hud');
+        hud.style.display = 'block';
+        
+        // 3. Set text to "Searching"
+        document.getElementById('ar-task-title').innerText = "Scanning...";
+        document.getElementById('ar-task-desc').innerText = "Point camera at the " + currentData.name + " poster.";
+        
+        // 4. Ensure buttons are hidden until found
+        document.getElementById('game-controls').style.display = 'none';
+
+        // 5. Start Listening for Target
+        const target = document.querySelector('#target-entity');
         
         target.addEventListener("targetFound", event => {
-          hud.style.display = 'block';
+          // Change text to the Game Task
+          document.getElementById('ar-task-title').innerText = currentData.task.title;
+          document.getElementById('ar-task-desc').innerText = currentData.task.desc;
+          // Show Game Buttons
+          document.getElementById('game-controls').style.display = 'block';
         });
+
         target.addEventListener("targetLost", event => {
-          hud.style.display = 'none';
+          // Reset text to "Searching"
+          document.getElementById('ar-task-title').innerText = "Scanning...";
+          document.getElementById('ar-task-desc').innerText = "Point camera at the " + currentData.name + " poster.";
+          // Hide Game Buttons
+          document.getElementById('game-controls').style.display = 'none';
         });
       }
 
       function finishGame() {
-        document.getElementById('ar-object').setAttribute('visible', 'true'); // Show the "Dome"
+        // Reveal the AR object
+        document.getElementById('ar-object').setAttribute('visible', 'true');
+        
+        // Hide the HUD controls
         document.getElementById('ar-hud').style.display = 'none';
+        
+        // Trigger Quiz after 1.5 seconds
         setTimeout(() => { setupQuiz(); }, 1500);
       }
 
@@ -350,7 +376,7 @@
         const container = document.getElementById('quiz-options-container');
         container.innerHTML = ""; // Clear old buttons
 
-        // Create buttons dynamically
+        // Create new buttons
         currentData.quiz.options.forEach((opt, index) => {
           let btn = document.createElement("button");
           btn.className = "quiz-option";
