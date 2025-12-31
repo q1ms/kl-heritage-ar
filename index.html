@@ -11,7 +11,7 @@
       body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
       .hidden { display: none !important; }
 
-      /* --- UI STYLES (HTML) --- */
+      /* --- UI (HTML) --- */
       #title-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
@@ -41,7 +41,7 @@
       .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
       .prev-btn { left: 20px; } .next-btn { right: 20px; }
 
-      /* HOLOGRAPHIC INFO PANEL */
+      /* INFO PANEL */
       #holo-panel {
         position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
         background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
@@ -52,7 +52,7 @@
       #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
       .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
-      /* HUD & QUIZ */
+      /* GAME HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
       .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
       #game-controls { display: none; margin-top: 10px; }
@@ -60,6 +60,7 @@
       
       #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
 
+      /* QUIZ & VICTORY */
       #quiz-screen { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px; padding: 20px; text-align: center; z-index: 4000; display: none; }
       .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
       #victory-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
@@ -143,47 +144,45 @@
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
-      <a-light type="ambient" intensity="1.2"></a-light>
-      <a-light type="directional" position="1 2 1" intensity="0.5"></a-light>
+      <a-light type="ambient" intensity="1.5"></a-light>
+      <a-light type="directional" position="0 0 1" intensity="1"></a-light>
 
       <a-camera position="0 0 0" look-controls="enabled: false">
         
-        <a-entity id="ar-menu-group" position="0 0 -1.2" visible="false">
+        <a-entity id="ar-menu-group" position="0 0 -0.5" visible="false">
           
-          <a-plane id="ar-3d-portrait" position="-0.35 0 0" width="0.5" height="0.7" 
-                   material="shader: flat; side: double; color: #FFF"
-                   src=""
-                   animation="property: position; to: -0.35 0.05 0; dir: alternate; dur: 2000; loop: true">
-          </a-plane>
+          <a-box id="ar-3d-portrait" position="-0.15 0 0" width="0.2" height="0.3" depth="0.01"
+                 material="shader: flat; color: #CCC; depthTest: false"
+                 src="https://via.placeholder.com/300">
+          </a-box>
 
-          <a-plane class="clickable" position="0.35 0.25 0" width="0.6" height="0.15" 
-                   material="shader: flat; color: #1a1a2e; opacity: 0.9; side: double" id="btn-3d-bg">
-             <a-text value="BACKGROUND" align="center" color="#f1c40f" width="2" z-offset="0.01"></a-text>
-          </a-plane>
+          <a-box class="clickable" position="0.15 0.1 0" width="0.25" height="0.06" depth="0.01"
+                   material="shader: flat; color: #1a1a2e; depthTest: false" id="btn-3d-bg">
+             <a-text value="BACKGROUND" align="center" color="#f1c40f" width="0.8" z-offset="0.02"></a-text>
+          </a-box>
 
-          <a-plane class="clickable" position="0.35 0 0" width="0.6" height="0.15" 
-                   material="shader: flat; color: #1a1a2e; opacity: 0.9; side: double" id="btn-3d-con">
-             <a-text value="CONTRIBUTION" align="center" color="#f1c40f" width="2" z-offset="0.01"></a-text>
-          </a-plane>
+          <a-box class="clickable" position="0.15 0 0" width="0.25" height="0.06" depth="0.01"
+                   material="shader: flat; color: #1a1a2e; depthTest: false" id="btn-3d-con">
+             <a-text value="CONTRIBUTION" align="center" color="#f1c40f" width="0.8" z-offset="0.02"></a-text>
+          </a-box>
 
-          <a-plane class="clickable" position="0.35 -0.25 0" width="0.6" height="0.15" 
-                   material="shader: flat; color: #f1c40f; opacity: 0.9; side: double" id="btn-3d-build">
-             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="2" font="sourcecodepro" z-offset="0.01"></a-text>
-          </a-plane>
+          <a-box class="clickable" position="0.15 -0.1 0" width="0.25" height="0.06" depth="0.01"
+                   material="shader: flat; color: #f1c40f; depthTest: false" id="btn-3d-build">
+             <a-text value="BUILD >" align="center" color="#1a1a2e" width="1" font="sourcecodepro" z-offset="0.02"></a-text>
+          </a-box>
 
         </a-entity>
       </a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
         <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
-        <a-box position="0 0.4 0" width="0.6" depth="0.6" height="0.1" color="#555"></a-box>
         <a-sphere id="ar-object" position="0 0.8 0" radius="0.35" color="#FFD700" visible="false"></a-sphere>
       </a-entity>
 
     </a-scene>
 
     <script>
-      // --- DATABASE ---
+      // --- DB ---
       const db = {
         hubback: {
           name: "Arthur Benison Hubback", img: "./assets/hubback.png",
@@ -249,10 +248,12 @@
 
       function openARMenu(id) {
         currentData = db[id];
+        
         document.getElementById('selection-screen').style.display = 'none';
         document.getElementById('ar-back-btn').style.display = 'block';
         
         // Update 3D Portrait
+        // Note: We update the 'src' attribute. 
         document.querySelector('#ar-3d-portrait').setAttribute('src', currentData.img);
         
         // Show 3D Menu
