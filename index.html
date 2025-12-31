@@ -13,8 +13,7 @@
       /* UTILITIES */
       .hidden { display: none !important; }
       .fade-in { animation: fadeIn 0.5s; }
-      @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
       /* SCREEN 1: TITLE */
       #title-screen {
@@ -55,77 +54,45 @@
       .prev-btn { left: 20px; }
       .next-btn { right: 20px; }
 
-      /* SCREEN 3: AR PROFILE (FLOATING HUD) */
-      #ar-profile-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 2000; display: none; /* Hidden until activated */
-        pointer-events: none; /* Let clicks pass through to 3D scene if needed */
-      }
-      
-      /* 1. Floating Figure Image (Left Side) */
-      .ar-floating-figure {
-        position: absolute; top: 20%; left: 5%; width: 40%; 
-        animation: float 4s ease-in-out infinite; pointer-events: auto;
-      }
-      .ar-floating-figure img {
-        width: 100%; border-radius: 15px; 
-        border: 3px solid rgba(241, 196, 15, 0.7);
-        box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-      }
-
-      /* 2. Floating Buttons (Right Side) */
-      .ar-floating-menu {
-        position: absolute; top: 25%; right: 5%; width: 45%;
-        display: flex; flex-direction: column; gap: 15px; pointer-events: auto;
-      }
-      .glass-btn {
-        background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px);
-        color: white; border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 15px 10px; border-radius: 12px; text-align: left;
-        font-family: 'Lato', sans-serif; font-size: 14px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.3s;
-        display: flex; justify-content: space-between; align-items: center;
-      }
-      .glass-btn:active { background: rgba(241, 196, 15, 0.8); color: black; transform: scale(0.95); }
-      .btn-icon { font-size: 18px; margin-right: 5px; }
-
-      /* 3. Back Button */
-      .ar-back-btn {
-        position: absolute; top: 20px; left: 20px; pointer-events: auto;
-        background: rgba(0,0,0,0.5); color: white; border: none;
-        padding: 10px 15px; border-radius: 50%; font-size: 20px;
-      }
-
-      /* HOLOGRAPHIC INFO PANEL (Long Text) */
+      /* HOLOGRAPHIC INFO PANEL (The Glass Overlay for Text) */
       #holo-panel {
-        position: absolute; top: 15%; left: 10%; width: 80%; height: 70%;
-        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
+        position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
+        background: rgba(16, 21, 30, 0.9); border: 2px solid #f1c40f;
         border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
-        display: none; flex-direction: column; pointer-events: auto;
-        box-shadow: 0 0 30px rgba(241, 196, 15, 0.3); z-index: 2200;
+        display: none; flex-direction: column; z-index: 2200;
+        backdrop-filter: blur(5px); box-shadow: 0 0 30px rgba(241, 196, 15, 0.3);
       }
-      #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 15px; flex-grow: 1; }
+      #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
       .holo-close {
         align-self: flex-end; background: #e74c3c; color: white; border: none;
-        padding: 8px 20px; border-radius: 5px; margin-bottom: 15px;
+        padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight:bold;
       }
 
-      /* AR GAME HUD (Bottom) */
+      /* GAME HUD */
       #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
       .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
       #game-controls { display: none; margin-top: 10px; }
+      .hud-btn { background: white; border: none; padding: 10px 20px; border-radius: 20px; margin: 5px; font-weight: bold; }
 
       /* QUIZ & VICTORY */
-      #quiz-screen, #victory-screen { display: none; z-index: 4000; }
       #quiz-screen {
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px;
-        padding: 20px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        padding: 20px; text-align: center; z-index: 4000; display: none;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
       }
-      .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; }
+      .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
       #victory-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(39, 174, 96, 0.98); flex-direction: column; justify-content: center; align-items: center; color: white;
+        background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none;
+        flex-direction: column; justify-content: center; align-items: center; color: white;
+      }
+      
+      /* Back Button for AR Mode */
+      #ar-back-btn {
+        position: fixed; top: 20px; left: 20px; z-index: 2000; display: none;
+        background: rgba(0,0,0,0.5); color: white; border: none;
+        padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer;
       }
     </style>
   </head>
@@ -175,37 +142,15 @@
         </div>
       </div>
     </div>
+    
+    <button id="ar-back-btn" onclick="goBackToMenu()">&#8592;</button>
 
-    <div id="ar-profile-overlay">
-      <button class="ar-back-btn" onclick="goBackToMenu()">&#8592;</button>
-
-      <div class="ar-floating-figure">
-        <img id="ar-p-img" src="" alt="Figure">
+    <div id="holo-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Title</h2>
+        <button class="holo-close" onclick="closeHolo()">CLOSE</button>
       </div>
-
-      <div class="ar-floating-menu">
-        <div style="color:white; font-family:'Cinzel',serif; text-shadow:0 2px 4px black; margin-bottom:5px;">
-          <h3 id="ar-p-name" style="margin:0;">Name</h3>
-        </div>
-        <button class="glass-btn" onclick="showHolo('bg')">
-          <span>📜 Background</span> <span>&#8250;</span>
-        </button>
-        <button class="glass-btn" onclick="showHolo('con')">
-          <span>🏗️ Contribution</span> <span>&#8250;</span>
-        </button>
-        <button class="glass-btn" style="background:rgba(241, 196, 15, 0.3); border:1px solid #f1c40f;" onclick="startBuildingTask()">
-          <span>🏛️ Build Structure</span> <span>GO</span>
-        </button>
-      </div>
-
-      <div id="holo-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #555; padding-bottom:10px; margin-bottom:10px;">
-          <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Title</h2>
-          <button class="holo-close" onclick="closeHolo()">CLOSE</button>
-        </div>
-        <div id="holo-content">
-          </div>
-      </div>
+      <div id="holo-content">Text...</div>
     </div>
 
     <div id="ar-hud">
@@ -213,8 +158,8 @@
         <h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Searching...</h3>
         <p id="ar-task-desc">Scan the poster to begin.</p>
         <div id="game-controls">
-          <button class="glass-btn" style="display:inline-block; width:auto; margin:5px;" onclick="alert('Incorrect style!')">Option A</button>
-          <button class="glass-btn" style="display:inline-block; width:auto; margin:5px; background:rgba(39, 174, 96, 0.6);" onclick="finishGame()">Option B</button>
+          <button class="hud-btn" onclick="alert('Incorrect style!')">Option A</button>
+          <button class="hud-btn" style="background:#2ecc71; color:white;" onclick="finishGame()">Option B</button>
         </div>
       </div>
     </div>
@@ -230,17 +175,52 @@
       <button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" 
+             cursor="rayOrigin: mouse" 
+             raycaster="objects: .clickable" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+         <img id="btn-bg-texture" src="https://upload.wikimedia.org/wikipedia/commons/4/48/Dark_Blue_gradient_background.jpg"> 
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false">
+        
+        <a-entity id="ar-menu-group" position="0 0 -1.5" visible="false">
+          
+          <a-image id="ar-3d-portrait" position="-0.3 0 0" width="0.5" height="0.6" src="" 
+                   animation="property: position; to: -0.3 0.05 0; dir: alternate; dur: 2000; loop: true"></a-image>
+
+          <a-plane class="clickable" position="0.3 0.2 0" width="0.55" height="0.15" color="#1a1a2e" opacity="0.9"
+                   id="btn-3d-bg"
+                   animation="property: scale; to: 1.05 1.05 1; dir: alternate; dur: 1500; loop: true">
+             <a-text value="Background" align="center" color="#f1c40f" width="2"></a-text>
+          </a-plane>
+
+          <a-plane class="clickable" position="0.3 0 0" width="0.55" height="0.15" color="#1a1a2e" opacity="0.9"
+                   id="btn-3d-con">
+             <a-text value="Contribution" align="center" color="#f1c40f" width="2"></a-text>
+          </a-plane>
+
+          <a-plane class="clickable" position="0.3 -0.2 0" width="0.55" height="0.15" color="#f1c40f" opacity="0.9"
+                   id="btn-3d-build">
+             <a-text value="BUILD STRUCTURE >" align="center" color="#1a1a2e" width="1.8" font="sourcecodepro"></a-text>
+          </a-plane>
+
+        </a-entity>
+      </a-camera>
+
       <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
         <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
         <a-box position="0 0.4 0" width="0.6" depth="0.6" height="0.1" color="#555"></a-box>
         <a-sphere id="ar-object" position="0 0.8 0" radius="0.35" color="#FFD700" visible="false"></a-sphere>
       </a-entity>
+
     </a-scene>
 
     <script>
-      // --- DATABASE (With Long Text >100 words) ---
+      // --- DATABASE ---
       const db = {
         hubback: {
           name: "Arthur Benison Hubback", img: "./assets/hubback.png",
@@ -304,24 +284,44 @@
         document.getElementById('card-' + slideIndex).classList.add('active');
       }
 
-      // --- ACTIVATE AR PROFILE ---
+      // --- ACTIVATE 3D AR PROFILE ---
       function openARProfile(id) {
         currentData = db[id];
-        // Hide Carousel
+        
+        // 1. Hide HTML Menus
         document.getElementById('selection-screen').style.display = 'none';
+        document.getElementById('ar-back-btn').style.display = 'block';
+
+        // 2. Update the 3D Object Textures
+        // Note: A-Frame image src requires the path directly
+        const portrait = document.querySelector('#ar-3d-portrait');
+        portrait.setAttribute('src', currentData.img);
         
-        // Populate AR Overlay
-        document.getElementById('ar-p-name').innerText = currentData.name;
-        document.getElementById('ar-p-img').src = currentData.img;
-        
-        // Show Overlay
-        document.getElementById('ar-profile-overlay').style.display = 'block';
+        // 3. Make the 3D Menu Visible
+        document.querySelector('#ar-menu-group').setAttribute('visible', 'true');
       }
 
       function goBackToMenu() {
-        document.getElementById('ar-profile-overlay').style.display = 'none';
+        document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
+        document.getElementById('ar-back-btn').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
+        closeHolo();
       }
+
+      // --- 3D BUTTON LISTENERS ---
+      // We add event listeners to the 3D objects
+      
+      document.querySelector('#btn-3d-bg').addEventListener('click', function (evt) {
+        showHolo('bg');
+      });
+
+      document.querySelector('#btn-3d-con').addEventListener('click', function (evt) {
+        showHolo('con');
+      });
+
+      document.querySelector('#btn-3d-build').addEventListener('click', function (evt) {
+        startBuildingTask();
+      });
 
       // --- HOLOGRAPHIC INFO PANELS ---
       function showHolo(type) {
@@ -345,16 +345,17 @@
 
       // --- START GAME TASK ---
       function startBuildingTask() {
-        // Hide the Profile Overlay (The Figure & Buttons fade away)
-        document.getElementById('ar-profile-overlay').style.display = 'none';
+        // 1. Hide the Floating Menu
+        document.querySelector('#ar-menu-group').setAttribute('visible', 'false');
+        document.getElementById('ar-back-btn').style.display = 'none';
         
-        // Show the Game HUD
+        // 2. Show the Game HUD
         const hud = document.getElementById('ar-hud');
         hud.style.display = 'block';
         document.getElementById('ar-task-title').innerText = "Scanning...";
         document.getElementById('ar-task-desc').innerText = "Point camera at the poster.";
         
-        // Setup Listener
+        // 3. Setup Listener for Poster
         const target = document.querySelector('#target-entity');
         
         target.addEventListener("targetFound", () => {
