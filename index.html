@@ -2,208 +2,87 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Manual Control AR</title>
+    <title>3D Box Depth Test</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-      body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
+      body { margin: 0; overflow: hidden; background: #000; font-family: monospace; }
       
-      /* --- CONTROLLERS (THE NEW PART) --- */
-      #position-controls {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 160px;
-        background: rgba(0, 0, 0, 0.8); z-index: 9999;
-        display: none; /* Hidden until AR starts */
-        flex-direction: column; justify-content: center; align-items: center;
-        padding: 10px; color: #f1c40f;
+      /* DEBUG LOG */
+      #debug-log {
+        position: fixed; top: 0; left: 0; padding: 10px; color: #00FF00;
+        background: rgba(0,0,0,0.5); z-index: 9999; pointer-events: none;
       }
-      .slider-row { width: 90%; display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
-      .slider-row label { width: 50px; font-weight: bold; }
-      input[type=range] { width: 100%; }
-      #coord-display { font-family: monospace; color: white; margin-bottom: 5px; font-size: 12px; }
 
-      /* --- STANDARD UI --- */
-      #title-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #f1c40f; text-align: center; }
-      .start-btn { background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px; font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px; cursor: pointer; }
-      
-      #selection-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 2500; display: none; flex-direction: column; justify-content: center; align-items: center; }
-      .carousel-container { position: relative; width: 100%; height: 70%; display: flex; justify-content: center; align-items: center; }
-      .carousel-card { background: white; width: 260px; padding: 20px; border-radius: 20px; text-align: center; border: 4px solid #f1c40f; display: none; flex-direction: column; align-items: center; }
-      .carousel-card.active { display: flex; } 
-      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 2px solid #eee; }
-      .select-btn { background: #1a1a2e; color: #f1c40f; border: none; padding: 10px 30px; border-radius: 20px; margin-top: 10px; cursor:pointer; }
-      .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
-      .prev-btn { left: 20px; } .next-btn { right: 20px; }
-
-      #holo-panel { position: fixed; top: 5%; left: 5%; width: 90%; height: 60%; background: rgba(16, 21, 30, 0.98); border: 2px solid #f1c40f; border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; z-index: 5000; }
-      #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
-      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
-
-      #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
+      /* SLIDER CONTROLS */
+      #controls {
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+        background: rgba(255, 255, 255, 0.9); z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+      }
+      input[type=range] { width: 80%; margin: 10px; }
+      label { color: black; font-weight: bold; font-size: 16px; }
     </style>
   </head>
   <body>
 
-    <div id="title-screen">
-      <h1 style="font-family:'Cinzel',serif; font-size:32px;">Debug Mode AR</h1>
-      <button class="start-btn" onclick="goToSelection()">Start Debugging</button>
+    <div id="debug-log">
+      System Ready.<br>
+      Red Box Z: <span id="log-z">-0.5</span>
     </div>
 
-    <div id="selection-screen">
-      <h2 style="color:white; font-family:'Cinzel',serif;">Select Figure</h2>
-      <div class="carousel-container">
-        <button class="nav-btn prev-btn" onclick="moveSlide(-1)">&#10094;</button>
-        <button class="nav-btn next-btn" onclick="moveSlide(1)">&#10095;</button>
-        
-        <div class="carousel-card active" id="card-0">
-            <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
-            <h3>A.B. Hubback</h3> <button class="select-btn" onclick="openARMenu('hubback')">SELECT</button>
-        </div>
-        <div class="carousel-card" id="card-1">
-            <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
-            <h3>A.C. Norman</h3> <button class="select-btn" onclick="openARMenu('norman')">SELECT</button>
-        </div>
-      </div>
+    <div id="controls">
+      <label>MOVE RED BOX (DEPTH)</label>
+      <input type="range" id="z-slider" min="-10" max="-0.1" step="0.1" value="-0.5" oninput="updateBox()">
     </div>
 
-    <button id="ar-back-btn" onclick="goBackToMenu()">&#8592;</button>
-
-    <div id="holo-panel">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Title</h2>
-        <button class="holo-close" onclick="closeHolo()">CLOSE</button>
-      </div>
-      <div id="holo-content">Text...</div>
-    </div>
-
-    <div id="position-controls">
-      <div id="coord-display">Pos: 0, 0, -4</div>
-      
-      <div class="slider-row">
-        <label>X</label>
-        <input type="range" id="slider-x" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
-      </div>
-      <div class="slider-row">
-        <label>Y</label>
-        <input type="range" id="slider-y" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
-      </div>
-      <div class="slider-row">
-        <label>Z</label>
-        <input type="range" id="slider-z" min="-10" max="-0.5" step="0.1" value="-4" oninput="updatePos()">
-      </div>
-    </div>
-
-    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
+    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind; autoStart: true;" 
              color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
+             renderer="colorManagement: true, sortObjects: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
-      
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+
+      <a-camera position="0 0 0" look-controls="enabled: false">
         
-        <a-entity id="floating-menu" position="0 0 -4" visible="false">
-            
-            <a-box position="-0.8 0 0" height="1" width="0.8" depth="0.1" color="#ecf0f1"></a-box>
-            <a-image id="menu-img" position="-0.8 0 0.06" height="0.9" width="0.7" src=""></a-image>
+        <a-box id="red-box" position="0 0 -0.5" scale="0.2 0.2 0.2" color="red"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
+        </a-box>
 
-            <a-entity position="0.5 0 0">
-               <a-box class="clickable" position="0 0.4 0" width="1.2" height="0.3" depth="0.05" color="#34495e" id="btn-bg">
-                  <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06"></a-text>
-               </a-box>
-               
-               <a-box class="clickable" position="0 0 0" width="1.2" height="0.3" depth="0.05" color="#34495e" id="btn-con">
-                  <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06"></a-text>
-               </a-box>
-               
-               <a-box class="clickable" position="0 -0.4 0" width="1.2" height="0.3" depth="0.05" color="#f1c40f" id="btn-close">
-                  <a-text value="CLOSE MENU" align="center" color="#1a1a2e" z-offset="0.06"></a-text>
-               </a-box>
-            </a-entity>
+        <a-box position="0.5 0.5 -2" scale="0.3 0.3 0.3" color="blue"
+               animation="property: rotation; to: 360 0 0; loop: true; dur: 4000">
+        </a-box>
 
-        </a-entity>
+        <a-box position="-0.5 -0.5 -5" scale="0.5 0.5 0.5" color="yellow"
+               animation="property: rotation; to: 0 0 360; loop: true; dur: 5000">
+        </a-box>
+        
+        <a-text value="IF YOU SEE THIS TEXT, AR IS WORKING" 
+                color="white" align="center" position="0 0 -3" scale="1.5 1.5 1.5">
+        </a-text>
 
       </a-camera>
+
+      <a-light type="ambient" intensity="2"></a-light>
+      <a-light type="directional" position="0 0 1" intensity="1.5"></a-light>
+
     </a-scene>
 
     <script>
-      // DB
-      const db = {
-        hubback: { name: "Hubback", img: "./assets/hubback.png", bg: "Bg info...", con: "Con info..." },
-        norman: { name: "Norman", img: "./assets/norman.png", bg: "Bg info...", con: "Con info..." }
-      };
-      
-      let slideIndex = 0;
-
-      function goToSelection() {
-        document.getElementById('title-screen').style.display = 'none';
-        document.getElementById('selection-screen').style.display = 'flex';
-      }
-
-      function moveSlide(n) {
-        // (Simplified for brevity, same logic as before)
-        document.getElementById('card-' + slideIndex).classList.remove('active');
-        slideIndex += n; 
-        if(slideIndex > 1) slideIndex=0; if(slideIndex < 0) slideIndex=1;
-        document.getElementById('card-' + slideIndex).classList.add('active');
-      }
-
-      function openARMenu(id) {
-        document.getElementById('selection-screen').style.display = 'none';
+      function updateBox() {
+        const slider = document.getElementById('z-slider');
+        const val = slider.value;
         
-        // Show Controls & Back Button
-        document.getElementById('position-controls').style.display = 'flex';
-        document.getElementById('ar-back-btn').style.display = 'block';
+        // Update Red Box Position
+        const box = document.getElementById('red-box');
+        if (box) {
+          box.setAttribute('position', `0 0 ${val}`);
+        }
 
-        // Show Menu
-        const menu = document.getElementById('floating-menu');
-        menu.setAttribute('visible', 'true');
-        
-        // Reset Sliders to default
-        document.getElementById('slider-x').value = 0;
-        document.getElementById('slider-y').value = 0;
-        document.getElementById('slider-z').value = -4;
-        updatePos(); // Apply default
+        // Update Text Log
+        document.getElementById('log-z').innerText = val;
       }
-
-      function goBackToMenu() {
-        document.getElementById('floating-menu').setAttribute('visible', 'false');
-        document.getElementById('position-controls').style.display = 'none';
-        document.getElementById('ar-back-btn').style.display = 'none';
-        document.getElementById('selection-screen').style.display = 'flex';
-        closeHolo();
-      }
-
-      // --- THE SLIDER LOGIC ---
-      function updatePos() {
-        const x = document.getElementById('slider-x').value;
-        const y = document.getElementById('slider-y').value;
-        const z = document.getElementById('slider-z').value;
-        
-        // Update display text
-        document.getElementById('coord-display').innerText = `Pos: ${x}, ${y}, ${z}`;
-        
-        // Move the 3D Object
-        const menu = document.getElementById('floating-menu');
-        menu.setAttribute('position', `${x} ${y} ${z}`);
-      }
-
-      // Button Listeners
-      document.querySelector('#btn-bg').addEventListener('click', () => {
-         document.getElementById('holo-title').innerText = "Background";
-         document.getElementById('holo-content').innerText = "This is the background info text.";
-         document.getElementById('holo-panel').style.display = 'flex';
-      });
-      document.querySelector('#btn-con').addEventListener('click', () => {
-         document.getElementById('holo-title').innerText = "Contribution";
-         document.getElementById('holo-content').innerText = "This is the contribution info text.";
-         document.getElementById('holo-panel').style.display = 'flex';
-      });
-      document.querySelector('#btn-close').addEventListener('click', () => {
-          goBackToMenu();
-      });
-      
-      function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
     </script>
+
   </body>
 </html>
