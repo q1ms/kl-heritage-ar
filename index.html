@@ -1,259 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>Manual Gyro AR</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <title>Professional AR Museum</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-      body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #000; }
+      body { margin: 0; padding: 0; font-family: 'Lato', sans-serif; background-color: #1a1a2e; color: white; }
 
-      /* --- VIDEO BACKGROUND (The "Fake" AR) --- */
-      #cam-feed {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        object-fit: cover; z-index: -1; /* Behind everything */
-        transform: scaleX(-1); /* Mirror effect like a selfie/mirror */
-      }
-
-      /* --- UI LAYER --- */
-      #ui-layer {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 2000; pointer-events: none; /* Let clicks pass through to canvas if needed */
-        display: flex; flex-direction: column;
-      }
-
-      /* CONTROLS CONTAINER (Bottom) */
-      #controls-area {
-        position: absolute; bottom: 0; left: 0; width: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        padding: 15px 10px; border-top: 2px solid #f1c40f;
-        pointer-events: auto;
-        display: flex; flex-direction: column; align-items: center;
-        box-sizing: border-box;
-      }
-
-      .control-row {
-        display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 8px;
-      }
-      .control-label { color: #f1c40f; font-weight: bold; width: 60px; font-size: 14px; }
-      input[type=range] { flex-grow: 1; margin: 0 10px; }
-      
-      .toggle-btn {
-        background: #34495e; color: white; border: 1px solid white; padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer;
-      }
-
-      /* SELECTION SCREEN (Overlay) */
+      /* --- SELECTION SCREEN --- */
       #selection-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #2c3e50; z-index: 3000; pointer-events: auto;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
+        z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center;
       }
-      .card-container { display: flex; overflow-x: auto; width: 100%; padding: 20px; box-sizing: border-box; justify-content: center; }
-      .figure-card {
-        min-width: 200px; background: white; margin: 10px; padding: 15px; border-radius: 15px;
-        text-align: center; border: 3px solid #f1c40f; cursor: pointer;
+      .card-container { display: flex; gap: 20px; overflow-x: auto; width: 100%; padding: 20px; justify-content: center; }
+      .card {
+        background: white; color: black; border-radius: 15px; padding: 15px;
+        width: 160px; text-align: center; border: 3px solid #f1c40f; cursor: pointer;
+        transition: transform 0.2s;
       }
-      .figure-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
-      .figure-card h3 { margin: 10px 0 0 0; color: #2c3e50; font-family: 'Cinzel', serif; }
+      .card:active { transform: scale(0.95); }
+      .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; background: #ddd; }
+      
+      /* --- AR VIEWER --- */
+      model-viewer {
+        width: 100%; height: 100vh;
+        background-color: #000;
+        --poster-color: transparent;
+      }
 
-      /* INFO POPUP */
-      #holo-panel {
-        position: fixed; top: 10%; left: 5%; width: 90%; height: 50%;
-        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
-        border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
-        display: none; flex-direction: column; pointer-events: auto; z-index: 5000;
+      /* --- HOTSPOTS (The Floating UI on the 3D Model) --- */
+      .hotspot-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        border: 2px solid #f1c40f;
+        padding: 15px;
+        width: 220px;
+        transform: translate3d(0, -50%, 0); /* Center it */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        display: flex; flex-direction: column; align-items: center;
+        text-align: center;
       }
-      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 5px 15px; border-radius: 5px; margin-bottom: 10px;}
+      .hotspot-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #2c3e50; margin-bottom: 8px; }
+      .hotspot-title { font-family: 'Cinzel', serif; font-size: 16px; margin: 0 0 5px 0; color: #2c3e50; font-weight: bold; }
+      
+      .ar-btn {
+        background: #2c3e50; color: white; border: none; padding: 8px 16px; 
+        border-radius: 20px; margin: 4px 0; font-size: 12px; width: 100%; cursor: pointer;
+      }
+      .ar-btn:active { background: #f1c40f; color: black; }
+
+      /* --- INFO POPUP --- */
+      #info-overlay {
+        position: fixed; bottom: 0; left: 0; width: 100%; background: white; 
+        color: #333; border-top-left-radius: 20px; border-top-right-radius: 20px;
+        padding: 20px; box-sizing: border-box; transform: translateY(100%);
+        transition: transform 0.3s ease-out; z-index: 10;
+      }
+      #info-overlay.show { transform: translateY(0); }
+      
+      #back-btn {
+        position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.6); 
+        color: white; padding: 10px 15px; border-radius: 50%; border:none; 
+        font-size: 20px; display: none; z-index: 5;
+      }
 
     </style>
   </head>
-
   <body>
 
-    <video id="cam-feed" autoplay playsinline muted></video>
-
     <div id="selection-screen">
-      <h1 style="color:#f1c40f; font-family:'Cinzel',serif;">Select Architect</h1>
+      <h1 style="color:#f1c40f; font-family:'Cinzel',serif;">History AR</h1>
+      <p>Select a figure to place in your room:</p>
+      
       <div class="card-container">
-        <div class="figure-card" onclick="startAR('hubback')">
-          <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
-          <h3>Hubback</h3>
+        <div class="card" onclick="loadAR('hubback')">
+          <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/150/2c3e50/FFFFFF?text=Hubback'">
+          <h3>A.B. Hubback</h3>
         </div>
-        <div class="figure-card" onclick="startAR('norman')">
-          <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
-          <h3>Norman</h3>
-        </div>
-        <div class="figure-card" onclick="startAR('bidwell')">
-          <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/200?text=Bidwell'">
-          <h3>Bidwell</h3>
+        <div class="card" onclick="loadAR('norman')">
+          <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/150/2c3e50/FFFFFF?text=Norman'">
+          <h3>A.C. Norman</h3>
         </div>
       </div>
-      <p style="color:white; margin-top:20px;">(Camera permission required)</p>
     </div>
 
-    <div id="controls-area" style="display:none;">
+    <model-viewer 
+      id="viewer"
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+      ar 
+      ar-modes="scene-viewer webxr quick-look" 
+      camera-controls 
+      shadow-intensity="1" 
+      disable-zoom
+      auto-rotate
+      style="display:none;"
+    >
       
-      <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
-        <button class="toggle-btn" onclick="goBack()">&#8592; BACK</button>
-        <span style="color:white; font-size:12px;">ADJUST POSITION</span>
-        <button class="toggle-btn" onclick="resetPos()">RESET</button>
-      </div>
-
-      <div class="control-row">
-        <span class="control-label">X (Side)</span>
-        <input type="range" id="sl-x" min="-4" max="4" step="0.1" value="0" oninput="updatePos()">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Y (Up)</span>
-        <input type="range" id="sl-y" min="-3" max="3" step="0.1" value="0" oninput="updatePos()">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Z (Depth)</span>
-        <input type="range" id="sl-z" min="-8" max="-1" step="0.1" value="-4" oninput="updatePos()">
-      </div>
-    </div>
-
-    <div id="holo-panel">
-      <button class="holo-close" onclick="document.getElementById('holo-panel').style.display='none'">CLOSE</button>
-      <h2 id="holo-title" style="margin:0; color:#f1c40f; font-family:'Cinzel',serif;">Title</h2>
-      <p id="holo-desc" style="line-height:1.5;">Description...</p>
-    </div>
-
-    <a-scene embedded renderer="alpha: true; colorManagement: true;" vr-mode-ui="enabled: false">
-      
-      <a-entity camera look-controls="touchEnabled: false" position="0 0 0">
-        <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
-      </a-entity>
-
-      <a-light type="ambient" intensity="1.5"></a-light>
-      <a-light type="directional" position="-1 2 1" intensity="1"></a-light>
-
-      <a-entity id="ar-content" position="0 0 -4">
+      <button slot="hotspot-head" data-position="0 1.5 0" data-normal="0 0 1">
         
-        <a-entity id="card-group" rotation="0 0 0">
+        <div class="hotspot-panel">
+          <img id="ar-img" class="hotspot-img" src="">
+          <div id="ar-name" class="hotspot-title">NAME</div>
           
-          <a-image id="ar-img" src="" position="-0.8 0.5 0" width="1" height="1.3"></a-image>
-          
-          <a-text id="ar-name" value="NAME" position="0 1.3 0" align="center" width="5" color="#f1c40f" font="mozillavr"></a-text>
+          <button class="ar-btn" onclick="showData('bg')">Background Info</button>
+          <button class="ar-btn" onclick="showData('con')">Contributions</button>
+          <button class="ar-btn" onclick="showData('quiz')">Mini Quiz</button>
+        </div>
 
-          <a-entity position="0.6 0.5 0">
-            <a-box class="clickable" position="0 0.3 0" width="1.4" height="0.3" depth="0.05" color="#34495e"
-                   onclick="showInfo('bg')">
-              <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06"></a-text>
-            </a-box>
-            <a-box class="clickable" position="0 -0.1 0" width="1.4" height="0.3" depth="0.05" color="#34495e"
-                   onclick="showInfo('con')">
-               <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06"></a-text>
-            </a-box>
-            <a-box class="clickable" position="0 -0.5 0" width="1.4" height="0.3" depth="0.05" color="#f1c40f"
-                   onclick="showInfo('quiz')">
-               <a-text value="QUIZ GAME >" align="center" color="#1a1a2e" z-offset="0.06"></a-text>
-            </a-box>
-          </a-entity>
+      </button>
 
-        </a-entity>
+    </model-viewer>
 
-      </a-entity>
+    <button id="back-btn" onclick="exitAR()">&#8592;</button>
 
-    </a-scene>
+    <div id="info-overlay">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 id="info-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Title</h2>
+        <button onclick="document.getElementById('info-overlay').classList.remove('show')" style="border:none; background:none; font-size:20px;">&times;</button>
+      </div>
+      <p id="info-body" style="line-height:1.6;">Content...</p>
+    </div>
 
     <script>
-      // --- DB ---
+      // DATABASE
       const db = {
-        hubback: { name: "A.B. HUBBACK", img: "./assets/hubback.png", bg: "Hubback was a Brigadier General and Architect...", con: "Designed Jamek Mosque & KL Railway Station.", quiz: "Which war did he serve in? (A: WWI)" },
-        norman: { name: "A.C. NORMAN", img: "./assets/norman.png", bg: "Norman was a senior government architect...", con: "Created the ground plan for Sultan Abdul Samad Building.", quiz: "He designed the ground plan for which building?" },
-        bidwell: { name: "R.A.J BIDWELL", img: "./assets/bidwell.png", bg: "Bidwell was a young, talented draftsman...", con: "Draw the detailed Indo-Saracenic plans.", quiz: "Who was the State Engineer he worked for?" }
+        hubback: { 
+          name: "A.B. HUBBACK", 
+          img: "./assets/hubback.png",
+          bg: "Arthur Benison Hubback was a British architect who designed the Jamek Mosque and KL Railway Station.",
+          con: "He introduced the Indo-Saracenic style which defined colonial Malaya's architecture.",
+          quiz: "Q: Which mosque did he design? \nA: Jamek Mosque."
+        },
+        norman: { 
+          name: "A.C. NORMAN", 
+          img: "./assets/norman.png",
+          bg: "A.C. Norman was a senior government architect in the late 19th century.",
+          con: "He is credited with the ground plan of the Sultan Abdul Samad Building.",
+          quiz: "Q: What is his most famous building plan? \nA: Sultan Abdul Samad Building."
+        }
       };
 
       let currentId = null;
 
-      // 1. START CAMERA MANUALLY
-      async function initCamera() {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-          });
-          const video = document.getElementById('cam-feed');
-          video.srcObject = stream;
-          video.play();
-        } catch (err) {
-          alert("Camera Error: " + err);
-        }
-      }
-
-      // 2. LAUNCH AR
-      function startAR(id) {
-        // Init Cam
-        initCamera();
-
-        // Update Data
+      function loadAR(id) {
         currentId = id;
         const data = db[id];
         
-        document.getElementById('ar-name').setAttribute('value', data.name);
+        // 1. Update the Hotspot UI
+        document.getElementById('ar-name').innerText = data.name;
         
-        // Image check
+        // Image Fallback
         const imgEl = document.getElementById('ar-img');
-        if(data.img) imgEl.setAttribute('src', data.img);
-        else imgEl.setAttribute('src', 'https://via.placeholder.com/300');
+        imgEl.src = data.img;
+        imgEl.onerror = function(){ this.src = 'https://via.placeholder.com/100'; };
 
-        // UI Swap
+        // 2. Switch Screens
         document.getElementById('selection-screen').style.display = 'none';
-        document.getElementById('controls-area').style.display = 'flex';
         
-        // Request DeviceOrientation (Required for iOS 13+)
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission()
-            .then(response => { if (response == 'granted') { /* Great */ } })
-            .catch(console.error);
+        const viewer = document.getElementById('viewer');
+        viewer.style.display = 'block';
+        document.getElementById('back-btn').style.display = 'block';
+
+        // 3. Activate AR immediately (if supported)
+        if (viewer.canActivateAR) {
+          viewer.activateAR();
         }
-        
-        resetPos();
       }
 
-      function goBack() {
+      function exitAR() {
+        document.getElementById('viewer').style.display = 'none';
+        document.getElementById('back-btn').style.display = 'none';
+        document.getElementById('info-overlay').classList.remove('show');
         document.getElementById('selection-screen').style.display = 'flex';
-        document.getElementById('controls-area').style.display = 'none';
-        document.getElementById('holo-panel').style.display = 'none';
       }
 
-      // 3. MOVER LOGIC
-      function updatePos() {
-        const x = document.getElementById('sl-x').value;
-        const y = document.getElementById('sl-y').value;
-        const z = document.getElementById('sl-z').value;
+      function showData(type) {
+        const data = db[currentId];
+        const title = document.getElementById('info-title');
+        const body = document.getElementById('info-body');
         
-        const el = document.getElementById('ar-content');
-        el.setAttribute('position', `${x} ${y} ${z}`);
-      }
+        if(type === 'bg') { title.innerText = "Background"; body.innerText = data.bg; }
+        else if(type === 'con') { title.innerText = "Contribution"; body.innerText = data.con; }
+        else { title.innerText = "Quiz"; body.innerText = data.quiz; }
 
-      function resetPos() {
-        document.getElementById('sl-x').value = 0;
-        document.getElementById('sl-y').value = 0;
-        document.getElementById('sl-z').value = -4; // Default distance
-        updatePos();
+        document.getElementById('info-overlay').classList.add('show');
       }
-
-      // 4. BUTTON INTERACTIONS
-      // Note: A-Frame clicks require Raycaster setup, which we have.
-      // But passing functions to A-Frame onclick is tricky. 
-      // We are using standard HTML onclick on the a-box primitive (only works in some A-Frame versions).
-      // If clicks fail, we use this fallback Listener:
-      
-      // Let's rely on global window function for the onclick attributes in HTML
-      window.showInfo = function(type) {
-        if(!currentId) return;
-        const p = document.getElementById('holo-panel');
-        const t = document.getElementById('holo-title');
-        const d = document.getElementById('holo-desc');
-        
-        p.style.display = 'flex';
-        if(type === 'bg') { t.innerText = "Background"; d.innerText = db[currentId].bg; }
-        else if(type === 'con') { t.innerText = "Contribution"; d.innerText = db[currentId].con; }
-        else { t.innerText = "Quiz"; d.innerText = db[currentId].quiz; }
-      }
-
     </script>
+
   </body>
 </html>
