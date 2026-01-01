@@ -1,172 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Robust Manual AR</title>
+  <head>
+    <title>Real 3D AR Experience</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
-
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Lato', sans-serif; }
+      body { margin: 0; background-color: #f0f0f0; font-family: sans-serif; }
+      
+      /* THE AR WINDOW */
+      model-viewer {
+        width: 100%;
+        height: 100vh; /* Full Screen */
+        background-color: #222;
+      }
 
-        /* === 1. THE START SCREEN (Crucial for Permissions) === */
-        #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #1a1a2e; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; color: #f1c40f;
-        }
-        .big-btn {
-            background: #f1c40f; color: #1a1a2e; border: none; padding: 20px 40px;
-            font-size: 20px; font-weight: bold; border-radius: 50px;
-            margin-top: 20px; cursor: pointer; font-family: 'Cinzel', serif;
-            box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-        }
-
-        /* === 2. VIDEO BACKGROUND LAYER === */
-        #webcam {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; z-index: -1; 
-            transform: scaleX(-1); /* Mirror effect */
-        }
-        
-        /* === 3. UI OVERLAYS === */
-        #ui-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100; pointer-events: none;
-            display: none; /* Hidden until started */
-        }
-        
-        #controls {
-            position: absolute; bottom: 20px; width: 100%; text-align: center; pointer-events: auto;
-        }
-        
-        .nav-btn {
-            background: rgba(44, 62, 80, 0.9); border: 2px solid #f1c40f; color: white;
-            padding: 10px 20px; margin: 5px; border-radius: 20px; cursor: pointer;
-        }
-
-        /* DEBUG LOG (To see why it fails) */
-        #debug-log {
-            position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.5); color: #0f0;
-            font-size: 10px; padding: 5px; pointer-events: none; z-index: 10000;
-        }
+      /* CUSTOM AR BUTTON */
+      .ar-button {
+        background-color: white;
+        border-radius: 4px;
+        border: none;
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        padding: 12px 24px;
+        font-weight: bold;
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+      }
+      
+      /* OVERLAY TEXT */
+      #info-box {
+        position: absolute; top: 20px; left: 20px;
+        background: rgba(255,255,255,0.9); padding: 15px;
+        border-radius: 10px; pointer-events: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
 
-    <div id="debug-log">System Ready...</div>
+    <model-viewer 
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+      ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+      poster="https://modelviewer.dev/assets/poster-astronaut.png"
+      alt="A 3D model of an Astronaut"
+      shadow-intensity="1"
+      camera-controls
+      auto-rotate
+      ar
+    >
+      
+      <div id="info-box">
+        <h1 style="margin:0; font-size:18px;">AR Test Mode</h1>
+        <p style="margin:5px 0 0 0; font-size:14px;">1. Wait for model to load.<br>2. Tap the button below.<br>3. Point at floor.</p>
+      </div>
 
-    <div id="start-screen">
-        <h1 style="font-family:'Cinzel',serif;">History AR</h1>
-        <p style="color:white; padding:0 20px;">Requires Camera & Motion Sensors</p>
-        <button class="big-btn" onclick="initExperience()">START EXPERIENCE</button>
-    </div>
+      <button slot="ar-button" class="ar-button">
+        👋 VIEW IN YOUR ROOM
+      </button>
 
-    <video id="webcam" autoplay playsinline muted></video>
+    </model-viewer>
 
-    <div id="ui-layer">
-        <div id="controls">
-            <h2 id="char-name" style="color:#f1c40f; text-shadow:2px 2px 0 #000; font-family:'Cinzel',serif;">A.B. HUBBACK</h2>
-            <button class="nav-btn" onclick="swapContent('hubback')">HUBBACK</button>
-            <button class="nav-btn" onclick="swapContent('norman')">NORMAN</button>
-            <br>
-            <button class="nav-btn" style="background:#f1c40f; color:black; margin-top:10px;" onclick="resetPosition()">RESET POSITION</button>
-        </div>
-    </div>
-
-    <a-scene embedded renderer="alpha: true" vr-mode-ui="enabled: false">
-        
-        <a-entity camera look-controls="touchEnabled: false" position="0 0 0"></a-entity>
-
-        <a-entity id="ar-content" position="0 0 -3">
-            
-            <a-box color="#2c3e50" position="0 0 0" width="2" height="2.5" depth="0.1" opacity="0.9"></a-box>
-            <a-box color="#f1c40f" position="0 0 0" width="2.1" height="2.6" depth="0.05"></a-box>
-
-            <a-image id="3d-img" src="https://via.placeholder.com/300" position="0 0.5 0.1" width="1.5" height="1.2"></a-image>
-
-            <a-text id="3d-desc" value="Tap buttons below to change character." align="center" position="0 -0.5 0.1" width="1.8"></a-text>
-
-        </a-entity>
-    </a-scene>
-
-    <script>
-        function log(msg) {
-            document.getElementById('debug-log').innerHTML += "<br>" + msg;
-            console.log(msg);
-        }
-
-        async function initExperience() {
-            log("Initializing...");
-            
-            // 1. Hide Start Screen
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('ui-layer').style.display = 'block';
-
-            // 2. Request Motion Permissions (iOS 13+)
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    log("Motion Permission: " + response);
-                } catch (e) {
-                    log("Motion Error: " + e);
-                }
-            }
-
-            // 3. Start Camera (Manual Video)
-            const video = document.getElementById('webcam');
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                video.srcObject = stream;
-                video.play();
-                log("Camera started successfully.");
-            } catch (err) {
-                log("CAMERA FAILED: " + err.name);
-                log("Reason: " + err.message);
-                log("Trying fallback background...");
-                document.body.style.background = "#222"; // Grey background if camera fails
-            }
-        }
-
-        // DATABASE
-        const db = {
-            hubback: { name: "A.B. HUBBACK", img: "./assets/hubback.png", desc: "Designed Jamek Mosque & KL Station." },
-            norman: { name: "A.C. NORMAN", img: "./assets/norman.png", desc: "Designed Sultan Abdul Samad Ground Plan." }
-        };
-
-        function swapContent(id) {
-            const data = db[id];
-            // Update HTML UI
-            document.getElementById('char-name').innerText = data.name;
-            
-            // Update 3D UI
-            const imgEl = document.getElementById('3d-img');
-            const descEl = document.getElementById('3d-desc');
-            
-            // Image handling with fallback
-            imgEl.setAttribute('src', data.img);
-            // If image fails to load, use placeholder
-            let imgTest = new Image();
-            imgTest.onerror = () => { imgEl.setAttribute('src', 'https://via.placeholder.com/300?text=' + data.name); };
-            imgTest.src = data.img;
-
-            descEl.setAttribute('value', data.desc);
-        }
-
-        function resetPosition() {
-            // Recenter the content if user looks away
-            const camRot = document.querySelector('[camera]').getAttribute('rotation');
-            // This is a simple hack: We just reload the page to recalibrate gyro centers on most phones
-            // Or we can just zero out the container rotation (simplified for this demo)
-            location.reload(); 
-        }
-
-    </script>
-</body>
+  </body>
 </html>
