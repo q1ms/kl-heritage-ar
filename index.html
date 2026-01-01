@@ -2,47 +2,28 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>The Life of Malaysia's Historical Figures</title>
+    <title>Manual Control AR</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
-    <script>
-      // --- THE "MAGNET" SCRIPT ---
-      // This forces the menu to fly to the front of the camera, 
-      // avoiding the bug where camera-children disappear.
-      AFRAME.registerComponent('follow-camera', {
-        tick: function () {
-          const camera = this.el.sceneEl.camera;
-          if (!camera) return;
-
-          // 1. Get Camera Position
-          const camPos = camera.parent.position; 
-          
-          // 2. Calculate "In Front" Position (Z axis direction)
-          // We assume the camera faces -Z in local space.
-          // We manually place the menu 4 meters ahead (-4)
-          // Note: MindAR moves the "Camera Parent", not the camera itself usually.
-          
-          // Simple approach: Read World Direction
-          const direction = new THREE.Vector3();
-          camera.getWorldDirection(direction); // Get direction camera is looking
-          
-          const targetPos = new THREE.Vector3();
-          targetPos.copy(camera.getWorldPosition(new THREE.Vector3())); // Start at camera
-          targetPos.add(direction.multiplyScalar(4)); // Move 4 meters forward
-          
-          // 3. Teleport Menu
-          this.el.object3D.position.copy(targetPos);
-          this.el.object3D.lookAt(camera.getWorldPosition(new THREE.Vector3())); // Face the user
-        }
-      });
-    </script>
-
     <style>
       body { margin: 0; font-family: 'Lato', sans-serif; overflow: hidden; background: #2c3e50; }
       
-      /* UI OVERLAYS (Title, Selection, etc.) */
+      /* --- CONTROLLERS (THE NEW PART) --- */
+      #position-controls {
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 160px;
+        background: rgba(0, 0, 0, 0.8); z-index: 9999;
+        display: none; /* Hidden until AR starts */
+        flex-direction: column; justify-content: center; align-items: center;
+        padding: 10px; color: #f1c40f;
+      }
+      .slider-row { width: 90%; display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
+      .slider-row label { width: 50px; font-weight: bold; }
+      input[type=range] { width: 100%; }
+      #coord-display { font-family: monospace; color: white; margin-bottom: 5px; font-size: 12px; }
+
+      /* --- STANDARD UI --- */
       #title-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #f1c40f; text-align: center; }
       .start-btn { background: #f1c40f; color: #1a1a2e; border: none; padding: 15px 40px; font-family: 'Cinzel', serif; font-size: 20px; border-radius: 30px; margin-top: 20px; cursor: pointer; }
       
@@ -55,27 +36,18 @@
       .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; }
       .prev-btn { left: 20px; } .next-btn { right: 20px; }
 
-      #holo-panel { position: fixed; top: 10%; left: 5%; width: 90%; height: 80%; background: rgba(16, 21, 30, 0.98); border: 2px solid #f1c40f; border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; z-index: 5000; }
+      #holo-panel { position: fixed; top: 5%; left: 5%; width: 90%; height: 60%; background: rgba(16, 21, 30, 0.98); border: 2px solid #f1c40f; border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; z-index: 5000; }
       #holo-content { overflow-y: auto; text-align: justify; line-height: 1.6; font-size: 16px; flex-grow: 1; margin-top:10px; }
       .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
       #ar-back-btn { position: fixed; top: 20px; left: 20px; z-index: 2000; display: none; background: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer; }
-
-      #ar-hud { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 1000; display: none; }
-      .hud-box { background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 15px; display: inline-block; width: 90%; }
-      #game-controls { display: none; margin-top: 10px; }
-      .hud-btn { background: white; border: none; padding: 10px 20px; border-radius: 20px; margin: 5px; font-weight: bold; }
-      
-      #quiz-screen { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; border: 4px solid #1a1a2e; border-radius: 15px; padding: 20px; text-align: center; z-index: 4000; display: none; }
-      .quiz-option { display: block; width: 100%; padding: 12px; margin: 10px 0; background: #ecf0f1; border: none; border-radius: 8px; cursor:pointer; }
-      #victory-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(39, 174, 96, 0.98); z-index: 5000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
     </style>
   </head>
   <body>
 
     <div id="title-screen">
-      <h1 style="font-family:'Cinzel',serif; font-size:32px;">The Life of Malaysia's Historical Figures</h1>
-      <button class="start-btn" onclick="goToSelection()">ENTER MUSEUM</button>
+      <h1 style="font-family:'Cinzel',serif; font-size:32px;">Debug Mode AR</h1>
+      <button class="start-btn" onclick="goToSelection()">Start Debugging</button>
     </div>
 
     <div id="selection-screen">
@@ -92,25 +64,9 @@
             <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
             <h3>A.C. Norman</h3> <button class="select-btn" onclick="openARMenu('norman')">SELECT</button>
         </div>
-        <div class="carousel-card" id="card-2">
-            <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/200?text=Bidwell'">
-            <h3>R.A.J Bidwell</h3> <button class="select-btn" onclick="openARMenu('bidwell')">SELECT</button>
-        </div>
-        <div class="carousel-card" id="card-3">
-            <img src="./assets/spooner.png" onerror="this.src='https://via.placeholder.com/200?text=Spooner'">
-            <h3>Charles Spooner</h3> <button class="select-btn" onclick="openARMenu('spooner')">SELECT</button>
-        </div>
-        <div class="carousel-card" id="card-4">
-            <img src="./assets/jewkes.png" onerror="this.src='https://via.placeholder.com/200?text=Jewkes'">
-            <h3>Stanley Jewkes</h3> <button class="select-btn" onclick="openARMenu('jewkes')">SELECT</button>
-        </div>
-        <div class="carousel-card" id="card-5">
-            <img src="./assets/baharuddin.png" onerror="this.src='https://via.placeholder.com/200?text=Baharuddin'">
-            <h3>Datuk Baharuddin</h3> <button class="select-btn" onclick="openARMenu('baharuddin')">SELECT</button>
-        </div>
       </div>
     </div>
-    
+
     <button id="ar-back-btn" onclick="goBackToMenu()">&#8592;</button>
 
     <div id="holo-panel">
@@ -120,9 +76,23 @@
       </div>
       <div id="holo-content">Text...</div>
     </div>
-    <div id="ar-hud"><div class="hud-box"><h3 id="ar-task-title" style="margin-top:0; color:#f1c40f;">Searching...</h3><p id="ar-task-desc">Scan the poster to begin.</p><div id="game-controls"><button class="hud-btn" onclick="alert('Incorrect style!')">Option A</button><button class="hud-btn" style="background:#2ecc71; color:white;" onclick="finishGame()">Option B</button></div></div></div>
-    <div id="quiz-screen"><h3 style="color:#1a1a2e; font-family:'Cinzel',serif;">History Quiz</h3><p id="quiz-question" style="font-weight:bold; margin-bottom:20px;">...</p><div id="quiz-options-container"></div></div>
-    <div id="victory-screen"><h1 style="font-family:'Cinzel',serif; font-size:40px;">CORRECT!</h1><button class="start-btn" style="background:white; color:#27ae60;" onclick="location.reload()">Back to Menu</button></div>
+
+    <div id="position-controls">
+      <div id="coord-display">Pos: 0, 0, -4</div>
+      
+      <div class="slider-row">
+        <label>X</label>
+        <input type="range" id="slider-x" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
+      </div>
+      <div class="slider-row">
+        <label>Y</label>
+        <input type="range" id="slider-y" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
+      </div>
+      <div class="slider-row">
+        <label>Z</label>
+        <input type="range" id="slider-z" min="-10" max="-0.5" step="0.1" value="-4" oninput="updatePos()">
+      </div>
+    </div>
 
     <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true; uiLoading: no; uiScanning: no;" 
              color-space="sRGB" 
@@ -130,61 +100,40 @@
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-camera>
-      
-      <a-light type="ambient" intensity="1.2"></a-light>
-      <a-light type="directional" position="0 0 1" intensity="1"></a-light>
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        
+        <a-entity id="floating-menu" position="0 0 -4" visible="false">
+            
+            <a-box position="-0.8 0 0" height="1" width="0.8" depth="0.1" color="#ecf0f1"></a-box>
+            <a-image id="menu-img" position="-0.8 0 0.06" height="0.9" width="0.7" src=""></a-image>
 
-      <a-entity id="floating-menu" follow-camera visible="false">
-          
-          <a-box id="menu-portrait-box" position="-1.5 0 0" width="1.2" height="1.6" depth="0.1" color="#f1c40f"></a-box>
+            <a-entity position="0.5 0 0">
+               <a-box class="clickable" position="0 0.4 0" width="1.2" height="0.3" depth="0.05" color="#34495e" id="btn-bg">
+                  <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06"></a-text>
+               </a-box>
+               
+               <a-box class="clickable" position="0 0 0" width="1.2" height="0.3" depth="0.05" color="#34495e" id="btn-con">
+                  <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06"></a-text>
+               </a-box>
+               
+               <a-box class="clickable" position="0 -0.4 0" width="1.2" height="0.3" depth="0.05" color="#f1c40f" id="btn-close">
+                  <a-text value="CLOSE MENU" align="center" color="#1a1a2e" z-offset="0.06"></a-text>
+               </a-box>
+            </a-entity>
 
-          <a-entity position="1 0 0">
-             
-             <a-box class="clickable" position="0 0.6 0" width="2" height="0.4" depth="0.1" color="#34495e" id="btn-bg">
-                <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06" scale="2 2 2"></a-text>
-             </a-box>
-             
-             <a-box class="clickable" position="0 0 0" width="2" height="0.4" depth="0.1" color="#34495e" id="btn-con">
-                <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06" scale="2 2 2"></a-text>
-             </a-box>
-             
-             <a-box class="clickable" position="0 -0.6 0" width="2" height="0.4" depth="0.1" color="#f1c40f" id="btn-build">
-                <a-text value="BUILD STRUCTURE" align="center" color="#1a1a2e" z-offset="0.06" scale="2 2 2" font="sourcecodepro"></a-text>
-             </a-box>
+        </a-entity>
 
-          </a-entity>
-      </a-entity>
-
-      <a-entity mindar-image-target="targetIndex: 0" id="target-entity">
-        <a-cylinder position="0 0 0" radius="0.4" height="0.8" color="#8B4513"></a-cylinder>
-        <a-sphere id="ar-object" position="0 0.8 0" radius="0.35" color="#FFD700" visible="false"></a-sphere>
-      </a-entity>
-
+      </a-camera>
     </a-scene>
 
     <script>
       // DB
       const db = {
-        hubback: {
-          name: "Hubback", img: "./assets/hubback.png",
-          bg: "Background info about Hubback...", con: "Contribution info...",
-          task: { title: "Task 1", desc: "Scan poster" }, quiz: { q: "Question?", options: ["A","B","C"], correct: 1 }
-        },
-        norman: {
-          name: "Norman", img: "./assets/norman.png",
-          bg: "Background info...", con: "Contribution info...",
-          task: { title: "Task 2", desc: "Scan poster" }, quiz: { q: "Question?", options: ["A","B","C"], correct: 1 }
-        },
-        bidwell: { name: "Bidwell", img: "./assets/bidwell.png", bg: "", con: "", task: {}, quiz: {options:[], correct:0}},
-        spooner: { name: "Spooner", img: "./assets/spooner.png", bg: "", con: "", task: {}, quiz: {options:[], correct:0}},
-        jewkes: { name: "Jewkes", img: "./assets/jewkes.png", bg: "", con: "", task: {}, quiz: {options:[], correct:0}},
-        baharuddin: { name: "Baharuddin", img: "./assets/baharuddin.png", bg: "", con: "", task: {}, quiz: {options:[], correct:0}}
+        hubback: { name: "Hubback", img: "./assets/hubback.png", bg: "Bg info...", con: "Con info..." },
+        norman: { name: "Norman", img: "./assets/norman.png", bg: "Bg info...", con: "Con info..." }
       };
-
-      let currentData = null;
+      
       let slideIndex = 0;
-      const totalSlides = 6;
 
       function goToSelection() {
         document.getElementById('title-screen').style.display = 'none';
@@ -192,82 +141,69 @@
       }
 
       function moveSlide(n) {
+        // (Simplified for brevity, same logic as before)
         document.getElementById('card-' + slideIndex).classList.remove('active');
-        slideIndex += n;
-        if (slideIndex >= totalSlides) slideIndex = 0;
-        if (slideIndex < 0) slideIndex = totalSlides - 1;
+        slideIndex += n; 
+        if(slideIndex > 1) slideIndex=0; if(slideIndex < 0) slideIndex=1;
         document.getElementById('card-' + slideIndex).classList.add('active');
       }
 
       function openARMenu(id) {
-        currentData = db[id];
         document.getElementById('selection-screen').style.display = 'none';
+        
+        // Show Controls & Back Button
+        document.getElementById('position-controls').style.display = 'flex';
         document.getElementById('ar-back-btn').style.display = 'block';
 
-        // ENABLE 3D MENU
+        // Show Menu
         const menu = document.getElementById('floating-menu');
         menu.setAttribute('visible', 'true');
+        
+        // Reset Sliders to default
+        document.getElementById('slider-x').value = 0;
+        document.getElementById('slider-y').value = 0;
+        document.getElementById('slider-z').value = -4;
+        updatePos(); // Apply default
       }
 
       function goBackToMenu() {
         document.getElementById('floating-menu').setAttribute('visible', 'false');
+        document.getElementById('position-controls').style.display = 'none';
         document.getElementById('ar-back-btn').style.display = 'none';
         document.getElementById('selection-screen').style.display = 'flex';
         closeHolo();
       }
 
-      // 3D BUTTON LISTENERS
-      document.querySelector('#btn-bg').addEventListener('click', () => showHolo('bg'));
-      document.querySelector('#btn-con').addEventListener('click', () => showHolo('con'));
-      document.querySelector('#btn-build').addEventListener('click', () => startTracking());
-
-      function showHolo(type) {
-        document.getElementById('holo-panel').style.display = 'flex';
-        if(type==='bg') {
-             document.getElementById('holo-title').innerText = "Background";
-             document.getElementById('holo-content').innerText = currentData.bg;
-        } else {
-             document.getElementById('holo-title').innerText = "Contribution";
-             document.getElementById('holo-content').innerText = currentData.con;
-        }
-      }
-      function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
-
-      function startTracking() {
-        document.getElementById('floating-menu').setAttribute('visible', 'false');
-        document.getElementById('ar-back-btn').style.display = 'none';
-        closeHolo();
-        document.getElementById('ar-hud').style.display = 'block';
+      // --- THE SLIDER LOGIC ---
+      function updatePos() {
+        const x = document.getElementById('slider-x').value;
+        const y = document.getElementById('slider-y').value;
+        const z = document.getElementById('slider-z').value;
         
-        // Setup Target
-        const target = document.querySelector('#target-entity');
-        const newTarget = target.cloneNode(true);
-        target.parentNode.replaceChild(newTarget, target);
-        newTarget.addEventListener("targetFound", () => {
-             document.getElementById('game-controls').style.display = 'block';
-        });
+        // Update display text
+        document.getElementById('coord-display').innerText = `Pos: ${x}, ${y}, ${z}`;
+        
+        // Move the 3D Object
+        const menu = document.getElementById('floating-menu');
+        menu.setAttribute('position', `${x} ${y} ${z}`);
       }
 
-      function finishGame() {
-         document.getElementById('ar-object').setAttribute('visible', 'true');
-         document.getElementById('ar-hud').style.display = 'none';
-         setTimeout(() => {
-             document.getElementById('quiz-screen').style.display = 'block';
-             document.getElementById('quiz-question').innerText = currentData.quiz.q;
-             const c = document.getElementById('quiz-options-container');
-             c.innerHTML="";
-             currentData.quiz.options.forEach((o,i)=>{
-                 let b=document.createElement("button"); b.className="quiz-option"; b.innerText=o;
-                 b.onclick=()=>{
-                    if(i===currentData.quiz.correct) {
-                        document.getElementById('quiz-screen').style.display='none';
-                        document.getElementById('victory-screen').style.display='flex';
-                    } else alert('No');
-                 };
-                 c.appendChild(b);
-             })
-         }, 1500);
-      }
+      // Button Listeners
+      document.querySelector('#btn-bg').addEventListener('click', () => {
+         document.getElementById('holo-title').innerText = "Background";
+         document.getElementById('holo-content').innerText = "This is the background info text.";
+         document.getElementById('holo-panel').style.display = 'flex';
+      });
+      document.querySelector('#btn-con').addEventListener('click', () => {
+         document.getElementById('holo-title').innerText = "Contribution";
+         document.getElementById('holo-content').innerText = "This is the contribution info text.";
+         document.getElementById('holo-panel').style.display = 'flex';
+      });
+      document.querySelector('#btn-close').addEventListener('click', () => {
+          goBackToMenu();
+      });
+      
+      function closeHolo() { document.getElementById('holo-panel').style.display = 'none'; }
     </script>
   </body>
 </html>
