@@ -1,147 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Malaysian Architects AR</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>History AR App</title>
     
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
-
+    
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-      body { margin: 0; background-color: #1a1a2e; font-family: 'Lato', sans-serif; overflow: hidden; }
-      
-      /* THE 3D WINDOW */
-      model-viewer {
-        width: 100%; height: 100vh;
-        background: radial-gradient(circle at center, #2c3e50 0%, #000000 100%);
-      }
+        /* --- GLOBAL STYLES --- */
+        body { margin: 0; background: #1a1a2e; font-family: 'Lato', sans-serif; overflow: hidden; color: white; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; }
+        .active-screen { display: flex; }
+        
+        h1, h2 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .btn {
+            background: linear-gradient(145deg, #f1c40f, #d4ac0d);
+            border: none; padding: 15px 30px; margin: 10px;
+            border-radius: 50px; font-weight: bold; font-size: 16px; color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); cursor: pointer;
+            font-family: 'Cinzel', serif; transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
 
-      /* INFO PANEL (Top) */
-      #info-panel {
-        position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-        width: 85%; max-width: 400px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 20px; border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        text-align: center; border-bottom: 4px solid #f1c40f;
-      }
-      
-      h1 { margin: 0 0 5px 0; font-family: 'Cinzel', serif; color: #2c3e50; font-size: 22px; }
-      p { margin: 0; font-size: 14px; color: #555; line-height: 1.4; }
+        /* --- 1. MAIN MENU --- */
+        #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
+        #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
+        
+        /* --- 2. INFO SCREEN --- */
+        #info-screen { padding: 30px; box-sizing: border-box; background: #1a1a2e; overflow-y: auto; }
+        .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
+        
+        /* --- 3. AR SCREEN --- */
+        #ar-screen { background: black; }
+        model-viewer { width: 100%; height: 100%; }
+        
+        /* AR OVERLAYS */
+        #scanner-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .scan-box {
+            width: 250px; height: 250px; border: 4px solid rgba(255,255,255,0.5);
+            border-radius: 20px; position: relative; overflow: hidden;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); /* Dim the rest of screen */
+        }
+        .scan-line {
+            width: 100%; height: 4px; background: #f1c40f;
+            position: absolute; top: 0; left: 0;
+            animation: scan 2s infinite linear;
+            box-shadow: 0 0 15px #f1c40f;
+        }
+        @keyframes scan { 0% {top:0%} 50% {top:100%} 100% {top:0%} }
+        
+        #ar-controls {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 10px; pointer-events: none;
+        }
+        #ar-controls button { pointer-events: auto; }
 
-      /* BUTTONS (Bottom) */
-      #controls {
-        position: absolute; bottom: 40px; width: 100%;
-        display: flex; justify-content: center; gap: 15px;
-        pointer-events: none; /* Let touches pass through */
-      }
+        /* --- 4. QUIZ POPUP --- */
+        #quiz-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+        }
+        .quiz-content { background: white; color: black; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; }
 
-      .btn {
-        pointer-events: auto; /* Enable clicking */
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border: 2px solid white; color: white;
-        padding: 12px 24px; border-radius: 30px;
-        font-weight: bold; cursor: pointer;
-        font-family: 'Cinzel', serif;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      }
-
-      .btn.active {
-        background: #f1c40f; color: #1a1a2e; border-color: #f1c40f;
-        transform: scale(1.1); box-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
-      }
-
-      /* SECURITY WARNING (Shows if not HTTPS) */
-      #https-warning {
-        display: none; position: absolute; top: 0; left: 0; width: 100%;
-        background: #e74c3c; color: white; text-align: center; padding: 10px;
-        font-weight: bold; z-index: 9999;
-      }
     </style>
-  </head>
-  <body>
+</head>
+<body>
 
-    <div id="https-warning">⚠️ AR requires HTTPS. Camera may not load.</div>
-
-    <model-viewer 
-      id="viewer"
-      src="./hubback.glb" 
-      ios-src="./hubback.usdz"
-      alt="Architectural Figure"
-      shadow-intensity="1"
-      camera-controls
-      auto-rotate
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      ar-scale="auto"
-    >
-      <button slot="ar-button" style="background-color: white; border-radius: 30px; border: none; position: absolute; top: 16px; right: 16px; padding: 10px 20px; font-weight:bold; color:#2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-        📷 VIEW IN ROOM
-      </button>
-    </model-viewer>
-
-    <div id="info-panel">
-      <h1 id="name">A.B. HUBBACK</h1>
-      <p id="desc">Renowned for designing the Jamek Mosque and the Kuala Lumpur Railway Station.</p>
+    <div id="menu-screen" class="screen active-screen">
+        <h1 style="font-size: 40px; margin-bottom: 10px;">ARCHITECTS</h1>
+        <p style="color: #ccc; margin-bottom: 40px;">History AR Experience</p>
+        
+        <button class="btn" onclick="openInfo('hubback')">A.B. HUBBACK</button>
+        <button class="btn" onclick="openInfo('norman')">A.C. NORMAN</button>
     </div>
 
-    <div id="controls">
-      <button class="btn active" onclick="loadModel('hubback', this)">HUBBACK</button>
-      <button class="btn" onclick="loadModel('norman', this)">NORMAN</button>
+    <div id="info-screen" class="screen">
+        <button class="btn-secondary" onclick="goBack('menu')" style="align-self: flex-start; padding: 8px 15px;">&larr; BACK</button>
+        
+        <h1 id="info-name" style="margin-top: 20px;">NAME HERE</h1>
+        <img id="info-img" src="" style="width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:20px; display:none;">
+        
+        <div class="info-card">
+            <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
+            <p id="info-bg">Details go here...</p>
+        </div>
+
+        <div class="info-card">
+            <h3 style="margin-top:0; color:#f1c40f;">Contribution</h3>
+            <p id="info-con">Details go here...</p>
+        </div>
+
+        <div style="display:flex; justify-content: space-between; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
+            <button class="btn" onclick="startAR()" style="width:48%">START EXPLORING</button>
+        </div>
+    </div>
+
+    <div id="ar-screen" class="screen">
+        
+        <model-viewer 
+            id="ar-viewer"
+            src="" 
+            ios-src=""
+            ar 
+            ar-modes="webxr scene-viewer quick-look" 
+            camera-controls 
+            auto-rotate 
+            shadow-intensity="1">
+        </model-viewer>
+
+        <div id="scanner-ui">
+            <h2 style="position:absolute; top: 15%;">SCANNING...</h2>
+            <div class="scan-box"><div class="scan-line"></div></div>
+            <p style="position:absolute; bottom: 20%; text-align:center; padding:0 20px;">
+                Point camera at floor or flat surface to spawn the model.
+            </p>
+        </div>
+
+        <div id="ar-controls">
+            <button class="btn btn-secondary" onclick="goBack('info')">EXIT AR</button>
+        </div>
+    </div>
+
+    <div id="quiz-modal">
+        <div class="quiz-content">
+            <h2 id="q-text">Question goes here?</h2>
+            <div id="q-options"></div>
+            <button class="btn btn-secondary" onclick="closeQuiz()" style="margin-top:20px;">CLOSE</button>
+        </div>
     </div>
 
     <script>
-      // 1. DATABASE
-      // Make sure you have ALL 4 files in your folder!
-      const data = {
-        hubback: {
-          glb: './hubback.glb',
-          usdz: './hubback.usdz',
-          name: "A.B. HUBBACK",
-          desc: "Renowned for designing the Jamek Mosque and the Kuala Lumpur Railway Station."
-        },
-        norman: {
-          glb: './norman.glb',
-          usdz: './norman.usdz',
-          name: "A.C. NORMAN",
-          desc: "The Government Architect who created the ground plans for the Sultan Abdul Samad Building."
+        // --- 1. DATA ---
+        const db = {
+            hubback: {
+                name: "A.B. HUBBACK",
+                bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant to the Director of Public Works.",
+                con: "He designed the Jamek Mosque, KL Railway Station, and the Ubudiah Mosque.",
+                model: "./hubback.glb",       // Ensure this file exists
+                ios: "./hubback.usdz",        // Ensure this file exists
+                quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
+            },
+            norman: {
+                name: "A.C. NORMAN",
+                bg: "Arthur Charles Norman was a British architect who served as the Senior Government Architect of the FMS.",
+                con: "He is best known for the ground plan of the Sultan Abdul Samad Building.",
+                model: "./norman.glb",
+                ios: "./norman.usdz",
+                quiz: { q: "What is Norman's famous building?", a: ["KL Tower", "Sultan Abdul Samad", "Jamek Mosque"], correct: 1 }
+            }
+        };
+
+        let currentId = null;
+
+        // --- 2. NAVIGATION ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(id).classList.add('active-screen');
         }
-      };
 
-      // 2. LOGIC
-      const viewer = document.getElementById('viewer');
-      const nameEl = document.getElementById('name');
-      const descEl = document.getElementById('desc');
+        function goBack(target) {
+            if(target === 'menu') showScreen('menu-screen');
+            if(target === 'info') showScreen('info-screen');
+        }
 
-      function loadModel(id, btn) {
-        // Update UI
-        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        function openInfo(id) {
+            currentId = id;
+            const data = db[id];
+            
+            // Populate Info
+            document.getElementById('info-name').innerText = data.name;
+            document.getElementById('info-bg').innerText = data.bg;
+            document.getElementById('info-con').innerText = data.con;
+            
+            showScreen('info-screen');
+        }
 
-        // Update Text
-        nameEl.innerText = data[id].name;
-        descEl.innerText = data[id].desc;
+        // --- 3. AR LOGIC ---
+        function startAR() {
+            const data = db[currentId];
+            const viewer = document.getElementById('ar-viewer');
+            
+            // Load correct model
+            viewer.src = data.model;
+            viewer.setAttribute('ios-src', data.ios);
+            
+            showScreen('ar-screen');
 
-        // Update 3D Model (Must update BOTH Android and iOS sources)
-        viewer.src = data[id].glb;
-        viewer.setAttribute('ios-src', data[id].usdz);
-      }
+            // Simulate "Scanning" for 2 seconds then hide UI
+            const scanUI = document.getElementById('scanner-ui');
+            scanUI.style.display = 'flex';
+            
+            // Note: In real WebAR, the 'AR' button inside model-viewer triggers the camera.
+            // We show our scanner UI until the user enters AR mode manually or we fade it out.
+            setTimeout(() => {
+                scanUI.style.display = 'none'; // Hide scanner after 2 seconds
+            }, 3000);
+        }
 
-      // 3. SECURITY CHECK
-      // This checks if you are running on a secure server.
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-          document.getElementById('https-warning').style.display = 'block';
-      }
+        // --- 4. QUIZ LOGIC ---
+        function startQuiz() {
+            const data = db[currentId].quiz;
+            const modal = document.getElementById('quiz-modal');
+            const qText = document.getElementById('q-text');
+            const qOpts = document.getElementById('q-options');
 
-      // 4. DEBUGGING
-      viewer.addEventListener('error', (e) => {
-        console.error("Model failed to load:", e);
-        alert("Error: Model file not found. Check console for details.");
-      });
+            qText.innerText = data.q;
+            qOpts.innerHTML = ''; // Clear old buttons
+
+            // Create buttons for answers
+            data.a.forEach((ans, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.style.width = '100%';
+                btn.style.margin = '5px 0';
+                btn.innerText = ans;
+                btn.onclick = () => {
+                    if(index === data.correct) alert("CORRECT!");
+                    else alert("Try Again!");
+                };
+                qOpts.appendChild(btn);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+        }
 
     </script>
-  </body>
+</body>
 </html>
