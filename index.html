@@ -1,110 +1,268 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Diagnostic Test</title>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sultan Abdul Samad AR Experience</title>
+
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+      AFRAME.registerComponent("gesture-detector", {
+        schema: { element: { default: "" } },
+        init: function() {
+          this.targetElement = this.data.element && document.querySelector(this.data.element);
+          if (!this.targetElement) this.targetElement = this.el;
+          this.internalState = { previousState: null };
+          this.emitGesture = this.emitGesture.bind(this);
+          this.targetElement.addEventListener("touchstart", this.emitGesture);
+          this.targetElement.addEventListener("touchend", this.emitGesture);
+          this.targetElement.addEventListener("touchmove", this.emitGesture);
+        },
+        emitGesture: function(event) {
+          const currentState = this.getTouchState(event);
+          const previousState = this.internalState.previousState;
+          const gestureContinues = previousState && currentState && currentState.touchCount == previousState.touchCount;
+          if (gestureContinues) {
+            const touchDetail = {
+              positionChange: { x: currentState.position.x - previousState.position.x, y: currentState.position.y - previousState.position.y },
+              spreadChange: currentState.spread - previousState.spread,
+              startSpread: previousState.startSpread || currentState.spread
+            };
+            if (currentState.touchCount == 1) this.el.emit("onefingermove", touchDetail);
+            if (currentState.touchCount == 2) this.el.emit("twofingermove", touchDetail);
+          }
+          this.internalState.previousState = currentState;
+        },
+        getTouchState: function(event) {
+          if (event.touches.length === 0) return null;
+          if (event.touches.length === 1) return { touchCount: 1, position: { x: event.touches[0].pageX, y: event.touches[0].pageY }, spread: 0 };
+          const dx = event.touches[0].pageX - event.touches[1].pageX;
+          const dy = event.touches[0].pageY - event.touches[1].pageY;
+          return { touchCount: 2, position: { x: 0, y: 0 }, spread: Math.sqrt(dx * dx + dy * dy) };
+        }
+      });
+
+      AFRAME.registerComponent('gesture-handler', {
+        schema: { minScale: { default: 0.1 }, maxScale: { default: 8 }, rotationFactor: { default: 5 } },
+        init: function () {
+          this.handleScale = this.handleScale.bind(this);
+          this.handleRotation = this.handleRotation.bind(this);
+          this.scaleFactor = 1;
+          this.isVisible = false;
+          this.el.sceneEl.addEventListener("markerFound", (e) => { this.isVisible = true; });
+          this.el.sceneEl.addEventListener("markerLost", (e) => { this.isVisible = false; });
+          this.el.sceneEl.addEventListener("twofingermove", this.handleScale);
+          this.el.sceneEl.addEventListener("onefingermove", this.handleRotation);
+        },
+        handleRotation: function (event) {
+          if (this.isVisible) this.el.object3D.rotation.y += event.detail.positionChange.x * (this.data.rotationFactor / 1000);
+        },
+        handleScale: function (event) {
+          if (this.isVisible) {
+            this.scaleFactor *= (1 + event.detail.spreadChange / event.detail.startSpread);
+            this.scaleFactor = Math.min(Math.max(this.scaleFactor, this.data.minScale), this.data.maxScale);
+            this.el.object3D.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
+          }
+        }
+      });
+    </script>
 
     <style>
-        body { margin: 0; font-family: monospace; overflow: hidden; }
-        #console {
-            position: fixed; top: 0; left: 0; width: 100%; height: 200px;
-            background: rgba(0,0,0,0.8); color: lime; pointer-events: none;
-            z-index: 9999; padding: 10px; overflow-y: scroll; font-size: 12px;
+        /* BASE STYLES */
+        body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #1a1a2e; color: white; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: none; flex-direction: column; background-color: #1a1a2e; }
+        .active-screen { display: flex; }
+        #ar-scene-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; visibility: hidden; }
+
+        /* BUTTONS */
+        .btn {
+            background: linear-gradient(145deg, #f1c40f, #d4ac0d);
+            border: none; padding: 15px 30px; margin: 10px;
+            border-radius: 50px; font-weight: bold; font-size: 16px; color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); font-family: 'Cinzel', serif; transition: transform 0.1s;
         }
-        #start-btn {
-            position: fixed; bottom: 50%; left: 50%; transform: translate(-50%, 50%);
-            z-index: 10000; padding: 20px 40px; font-size: 20px; font-weight: bold;
-            background: red; color: white; border: none; border-radius: 10px;
-        }
+        .btn:active { transform: scale(0.95); }
+        .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
+
+        /* UI COMPONENTS */
+        #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
+        #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
+        
+        #info-screen { padding: 30px; overflow-y: auto; }
+        .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
+
+        #scan-ui { position: absolute; bottom: 30px; left: 0; width: 100%; z-index: 20; display: none; text-align: center; pointer-events: none; }
+        #scan-ui button { pointer-events: auto; }
+        .scan-guide { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px; color: white; border: 1px solid #f1c40f; display: inline-block; margin-bottom: 15px; }
+
+        #quiz-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .quiz-content { background: white; color: black; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="console">Initializing...<br></div>
+    <div id="ar-scene-container">
+        <a-scene 
+            mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
+            embedded 
+            color-space="sRGB" 
+            renderer="colorManagement: true, physicallyCorrectLights" 
+            vr-mode-ui="enabled: false" 
+            device-orientation-permission-ui="enabled: false"
+            gesture-detector> 
 
-    <button id="start-btn" onclick="forceStart()">FORCE START CAMERA</button>
+            <a-assets>
+                <a-asset-item id="hubback-model" src="./hubback.glb"></a-asset-item>
+                <a-asset-item id="norman-model" src="./norman.glb"></a-asset-item>
+            </a-assets>
 
-    <a-scene 
-        mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false">
-        
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-        
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-box color="red" position="0 0 0" scale="0.5 0.5 0.5"></a-box>
-        </a-entity>
-    </a-scene>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-entity 
+                    id="ar-model-entity"
+                    gltf-model="#hubback-model" 
+                    rotation="0 0 0" 
+                    position="0 0 0" 
+                    scale="0.2 0.2 0.2" 
+                    gesture-handler> 
+                </a-entity>
+            </a-entity>
+        </a-scene>
+    </div>
+
+    <div id="menu-screen" class="screen active-screen">
+        <h1 style="font-size: 35px;">MALAYSIAN<br>ARCHITECTS</h1>
+        <p style="color: #ccc; margin-bottom: 40px;">Historical AR Scanner</p>
+        <button class="btn" onclick="openInfo('hubback')">A.B. HUBBACK</button>
+        <button class="btn" onclick="openInfo('norman')">A.C. NORMAN</button>
+    </div>
+
+    <div id="info-screen" class="screen">
+        <button class="btn-secondary" onclick="goBack()" style="align-self: flex-start; padding: 8px 15px; margin-bottom:10px;">&larr; BACK</button>
+        <h1 id="info-name" style="margin-top: 10px;">NAME</h1>
+        <div class="info-card">
+            <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
+            <p id="info-bg">...</p>
+        </div>
+        <div class="info-card">
+            <h3 style="margin-top:0; color:#f1c40f;">Contribution</h3>
+            <p id="info-con">...</p>
+        </div>
+        <div style="display:flex; justify-content: space-between; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
+            <button id="start-scan-btn" class="btn" onclick="startScanning()" style="width:48%">
+                START SCANNING
+            </button>
+        </div>
+    </div>
+
+    <div id="scan-ui">
+        <div class="scan-guide">📷 Point camera at the Building Photo</div>
+        <button class="btn btn-secondary" onclick="stopScanning()">STOP SCANNING</button>
+    </div>
+
+    <div id="quiz-modal">
+        <div class="quiz-content">
+            <h2 id="q-text">Question?</h2>
+            <div id="q-options"></div>
+            <button class="btn btn-secondary" onclick="closeQuiz()" style="margin-top:20px;">CLOSE</button>
+        </div>
+    </div>
 
     <script>
-        // --- LOGGER FUNCTION ---
-        function log(msg) {
-            document.getElementById('console').innerHTML += "> " + msg + "<br>";
-            console.log(msg);
-        }
-
-        // --- 1. CHECK PROTOCOL (HTTPS/FILE) ---
-        log("Checking Environment...");
-        if (window.location.protocol === 'file:') {
-            log("❌ CRITICAL ERROR: You are opening this as a local FILE.");
-            log("👉 Browsers BLOCK the camera in this mode.");
-            log("👉 You MUST use a Local Server or upload to Netlify/GitHub.");
-            document.body.style.backgroundColor = "darkred";
-        } else if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
-            log("❌ ERROR: You are using HTTP (Not Secure).");
-            log("👉 Camera requires HTTPS.");
-        } else {
-            log("✅ Environment looks safe (HTTPS or Localhost).");
-        }
-
-        // --- 2. CHECK DEVICE ---
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
-            log("ℹ️ Detected iOS Device.");
-            // Check if Chrome
-            if(navigator.userAgent.match('CriOS')) {
-                log("❌ ERROR: You are using Chrome on iPhone.");
-                log("👉 Apple BLOCKS camera in Chrome. Use SAFARI.");
+        const db = {
+            hubback: {
+                name: "A.B. HUBBACK",
+                bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant to the Director of Public Works.",
+                con: "He designed the Jamek Mosque, KL Railway Station, and the Ubudiah Mosque.",
+                model: "#hubback-model",
+                quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
+            },
+            norman: {
+                name: "A.C. NORMAN",
+                bg: "Arthur Charles Norman was a British architect who served as the Senior Government Architect of the FMS.",
+                con: "He is best known for the ground plan of the Sultan Abdul Samad Building.",
+                model: "#norman-model",
+                quiz: { q: "What is Norman's famous building?", a: ["KL Tower", "Sultan Abdul Samad", "Jamek Mosque"], correct: 1 }
             }
-        }
+        };
 
-        // --- 3. FORCE START ---
+        let currentId = null;
         const scene = document.querySelector('a-scene');
 
-        function forceStart() {
-            log("Attempting to start MindAR system...");
-            
+        // Navigation
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            if(id) document.getElementById(id).classList.add('active-screen');
+        }
+
+        function openInfo(id) {
+            currentId = id;
+            document.getElementById('info-name').innerText = db[id].name;
+            document.getElementById('info-bg').innerText = db[id].bg;
+            document.getElementById('info-con').innerText = db[id].con;
+            showScreen('info-screen');
+        }
+
+        function goBack() { showScreen('menu-screen'); }
+
+        // Scanning Logic
+        function startScanning() {
+            // Check if System is Ready
             if (!scene.systems['mindar-image-system']) {
-                log("❌ FAIL: MindAR System not loaded yet.");
-                log("👉 Internet might be slow or blocking the script.");
+                alert("System is still loading. Please wait 2 seconds and try again.");
                 return;
             }
 
-            try {
-                scene.systems['mindar-image-system'].start();
-                log("✅ Command sent to Camera.");
-                log("👉 If screen remains black, check browser permission popup.");
-                document.getElementById('start-btn').style.display = 'none';
-            } catch(e) {
-                log("❌ CRASH: " + e.message);
-            }
+            // Swap Model
+            const entity = document.getElementById('ar-model-entity');
+            entity.setAttribute('gltf-model', db[currentId].model);
+            
+            // Show AR, Hide UI
+            showScreen(null); 
+            document.getElementById('scan-ui').style.display = 'block';
+            document.getElementById('ar-scene-container').style.visibility = 'visible';
+            document.body.style.backgroundColor = 'transparent';
+
+            // Start Camera
+            scene.systems['mindar-image-system'].start();
         }
 
-        // Monitor Loading
-        scene.addEventListener('loaded', () => {
-            log("✅ A-Frame Engine Loaded.");
-            document.getElementById('start-btn').style.background = "green";
-            document.getElementById('start-btn').innerText = "START CAMERA";
-        });
-        
-        scene.addEventListener('arError', (event) => {
-            log("❌ AR ERROR: " + JSON.stringify(event.detail));
-        });
+        function stopScanning() {
+            if (scene.systems['mindar-image-system']) {
+                scene.systems['mindar-image-system'].stop();
+            }
+            document.getElementById('scan-ui').style.display = 'none';
+            document.getElementById('ar-scene-container').style.visibility = 'hidden';
+            document.body.style.backgroundColor = '#1a1a2e';
+            showScreen('info-screen');
+        }
+
+        // Quiz Logic
+        function startQuiz() {
+            const data = db[currentId].quiz;
+            document.getElementById('q-text').innerText = data.q;
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = '';
+            data.a.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.style.width = '100%';
+                btn.innerText = ans;
+                btn.onclick = () => alert(idx === data.correct ? "CORRECT!" : "Try Again!");
+                opts.appendChild(btn);
+            });
+            document.getElementById('quiz-modal').style.display = 'flex';
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+        }
     </script>
 </body>
 </html>
