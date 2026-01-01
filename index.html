@@ -5,34 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>AR History Scanner</title>
     
+    <script>
+        window.onerror = function(msg, url, line) {
+            const log = document.getElementById('debug-log');
+            if(log) {
+                log.style.display = 'block';
+                log.innerHTML += "<br>❌ ERROR: " + msg;
+            }
+        };
+    </script>
+
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* BASE STYLES */
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            font-family: 'Lato', sans-serif; 
-            background-color: #1a1a2e; /* Start Dark */
-            color: white; 
-        }
-
+        body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #1a1a2e; color: white; }
+        
         /* FULLSCREEN SCREENS */
-        .screen { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; display: none; flex-direction: column; 
-            background-color: #1a1a2e; /* Screens have their own background */
-        }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: none; flex-direction: column; background-color: #1a1a2e; }
         .active-screen { display: flex; }
 
-        /* THE 3D SCENE (Initially Hidden) */
-        #ar-scene-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; 
-            visibility: hidden; /* Hide until we start */
+        /* AR VIEW */
+        #ar-scene-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; visibility: hidden; }
+
+        /* DEBUG LOG */
+        #debug-log {
+            position: fixed; top: 0; left: 0; width: 100%; 
+            background: rgba(200, 0, 0, 0.9); color: white; 
+            font-size: 11px; padding: 5px; z-index: 99999;
+            text-align: center; display: none; pointer-events: none;
         }
 
         /* BUTTONS */
@@ -40,35 +43,23 @@
             background: linear-gradient(145deg, #f1c40f, #d4ac0d);
             border: none; padding: 15px 30px; margin: 10px;
             border-radius: 50px; font-weight: bold; font-size: 16px; color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); font-family: 'Cinzel', serif;
+            font-family: 'Cinzel', serif; opacity: 1; transition: opacity 0.3s;
         }
+        .btn:disabled { opacity: 0.5; background: #555; color: #ccc; }
         .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
 
-        /* DEBUG / STATUS LOG (So we know what's happening) */
-        #debug-log {
-            position: fixed; top: 0; left: 0; width: 100%; 
-            background: rgba(255, 0, 0, 0.8); color: white; 
-            font-size: 12px; padding: 5px; z-index: 99999;
-            text-align: center; display: none;
-        }
-
-        /* SCAN OVERLAY */
-        #scan-ui {
-            position: absolute; bottom: 30px; left: 0; width: 100%;
-            z-index: 20; display: none; text-align: center; pointer-events: none;
-        }
+        /* OVERLAYS */
+        #scan-ui { position: absolute; bottom: 30px; left: 0; width: 100%; z-index: 20; display: none; text-align: center; pointer-events: none; }
         #scan-ui button { pointer-events: auto; }
         
-        /* SCREENS CSS */
         #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
+        #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
         #info-screen { padding: 30px; overflow-y: auto; }
-        .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
-
     </style>
 </head>
 <body>
 
-    <div id="debug-log">Status: Initializing...</div>
+    <div id="debug-log">Log initialized.</div>
 
     <div id="ar-scene-container">
         <a-scene 
@@ -100,7 +91,7 @@
 
     <div id="menu-screen" class="screen active-screen">
         <h1 style="font-size: 30px;">ARCHITECTS AR</h1>
-        <p>Demo Mode</p>
+        <p>System Check...</p>
         <button class="btn" onclick="openInfo('hubback')">HUBBACK</button>
         <button class="btn" onclick="openInfo('norman')">NORMAN</button>
     </div>
@@ -108,46 +99,73 @@
     <div id="info-screen" class="screen">
         <button class="btn-secondary" onclick="goBack()" style="padding: 5px 15px;">&larr; BACK</button>
         <h1 id="info-name">NAME</h1>
-        <div class="info-card"><p id="info-desc">Description...</p></div>
+        <p>Ensure you are in a well lit room.</p>
         
-        <button class="btn" onclick="startScanning()" style="width:100%">START CAMERA</button>
+        <button id="start-btn" class="btn" onclick="startScanning()" style="width:100%" disabled>
+            ⌛ LOADING ENGINE...
+        </button>
     </div>
 
     <div id="scan-ui">
-        <div style="background:rgba(0,0,0,0.5); display:inline-block; padding:10px; border-radius:10px; margin-bottom:10px;">
-            📷 Point at Target Image
-        </div><br>
+        <div style="background:rgba(0,0,0,0.5); display:inline-block; padding:10px; border-radius:10px; color:white;">
+            📷 Point at Target
+        </div><br><br>
         <button class="btn btn-secondary" onclick="stopScanning()">STOP</button>
     </div>
 
     <script>
         // === LOGGER ===
+        const logBox = document.getElementById('debug-log');
         function log(msg) {
-            const el = document.getElementById('debug-log');
-            el.style.display = 'block';
-            el.innerText = "Status: " + msg;
+            logBox.style.display = 'block';
+            logBox.innerHTML = msg;
             console.log(msg);
         }
 
-        // === 1. CHECK HTTPS ===
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            alert("STOP! You are not on HTTPS. Camera will be blocked. Please use Netlify or localhost.");
-            log("ERROR: NOT HTTPS");
+        // === 1. SYSTEM CHECKS ===
+        // Check HTTPS
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+            log("⚠️ CRITICAL: NOT HTTPS. Camera blocked.");
+            alert("STOP: You must use HTTPS (Netlify/GitHub). Camera will not open.");
         }
 
-        // === 2. DATA ===
+        // Check iPhone Chrome
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isChrome = /CriOS/.test(navigator.userAgent);
+        if (isIOS && isChrome) {
+            log("⚠️ ERROR: Chrome on iOS detected.");
+            alert("Please open this in SAFARI. Chrome on iPhone cannot use AR.");
+        }
+
+        // === 2. WAIT FOR A-FRAME TO LOAD ===
+        const scene = document.querySelector('a-scene');
+        const startBtn = document.getElementById('start-btn');
+
+        scene.addEventListener('loaded', () => {
+            log("✅ System Ready.");
+            startBtn.disabled = false;
+            startBtn.innerText = "START CAMERA";
+        });
+
+        // Fallback: If 'loaded' event missed, check manually after 3s
+        setTimeout(() => {
+            if (scene.hasLoaded) {
+                startBtn.disabled = false;
+                startBtn.innerText = "START CAMERA";
+            }
+        }, 3000);
+
+
+        // === 3. DATA & NAV ===
         const db = {
-            hubback: { name: "A.B. HUBBACK", desc: "Architect of Jamek Mosque.", model: "#hubback-model" },
-            norman: { name: "A.C. NORMAN", desc: "Architect of Sultan Abdul Samad.", model: "#norman-model" }
+            hubback: { name: "A.B. HUBBACK", model: "#hubback-model" },
+            norman: { name: "A.C. NORMAN", model: "#norman-model" }
         };
         let currentId = null;
 
-        // === 3. NAVIGATION ===
         function openInfo(id) {
             currentId = id;
             document.getElementById('info-name').innerText = db[id].name;
-            document.getElementById('info-desc').innerText = db[id].desc;
-            
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById('info-screen').classList.add('active-screen');
         }
@@ -157,51 +175,52 @@
             document.getElementById('menu-screen').classList.add('active-screen');
         }
 
-        // === 4. CAMERA LOGIC ===
+        // === 4. CAMERA LOGIC (ROBUST) ===
         function startScanning() {
-            log("Requesting Camera...");
+            log("Status: Requesting Camera...");
+            startBtn.disabled = true; // Prevent double clicks
 
-            // 1. Hide UI
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById('scan-ui').style.display = 'block';
-
-            // 2. Make Body Transparent (CRITICAL FIX)
-            document.body.style.backgroundColor = 'transparent';
-
-            // 3. Show Scene
-            const container = document.getElementById('ar-scene-container');
-            container.style.visibility = 'visible';
-
-            // 4. Load Model
+            // Swap Model
             const entity = document.getElementById('ar-model-entity');
             entity.setAttribute('gltf-model', db[currentId].model);
 
-            // 5. Start MindAR System
-            const scene = document.querySelector('a-scene');
+            // Prepare UI
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById('scan-ui').style.display = 'block';
+            document.getElementById('ar-scene-container').style.visibility = 'visible';
             
-            if (scene.systems['mindar-image-system']) {
+            // CRITICAL: Make background transparent
+            document.body.style.backgroundColor = 'transparent';
+
+            // START ENGINE
+            try {
+                if (!scene.systems['mindar-image-system']) {
+                    throw new Error("MindAR System missing. Scripts not loaded?");
+                }
+                
                 scene.systems['mindar-image-system'].start();
-                log("Camera Started. Scan Image now.");
-            } else {
-                log("Error: AR System not found. Check Internet.");
-                // Fallback: reload page if it fails hard
-                setTimeout(() => { 
-                    if(!scene.systems['mindar-image-system']) alert("AR Engine failed to load. Check internet connection."); 
-                }, 2000);
+                log("✅ Camera Active. Scan Target.");
+                
+            } catch (err) {
+                log("❌ START FAILED: " + err.message);
+                alert("Camera failed to start: " + err.message);
+                // Restore UI if failed
+                stopScanning();
             }
         }
 
         function stopScanning() {
-            log("Stopping Camera...");
-            const scene = document.querySelector('a-scene');
-            scene.systems['mindar-image-system'].stop();
+            try {
+                scene.systems['mindar-image-system'].stop();
+            } catch(e) {}
 
-            // Reset UI
+            log("Camera Stopped.");
+            startBtn.disabled = false;
+            
             document.getElementById('ar-scene-container').style.visibility = 'hidden';
             document.getElementById('scan-ui').style.display = 'none';
-            document.body.style.backgroundColor = '#1a1a2e'; // Reset Background
+            document.body.style.backgroundColor = '#1a1a2e';
             
-            // Go back
             document.getElementById('info-screen').classList.add('active-screen');
         }
     </script>
