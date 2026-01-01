@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sultan Abdul Samad AR Experience</title>
+    <title>Sultan Abdul Samad AR</title>
+
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const log = document.getElementById('debug-log');
+            if(log) {
+                log.style.display = 'block';
+                log.innerHTML += "<br>❌ " + message;
+            }
+        };
+    </script>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
@@ -11,7 +21,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <script>
-      // Component to detect 2-finger pinch
       AFRAME.registerComponent("gesture-detector", {
         schema: { element: { default: "" } },
         init: function() {
@@ -27,15 +36,14 @@
           const currentState = this.getTouchState(event);
           const previousState = this.internalState.previousState;
           const gestureContinues = previousState && currentState && currentState.touchCount == previousState.touchCount;
-          
           if (gestureContinues) {
             const touchDetail = {
               positionChange: { x: currentState.position.x - previousState.position.x, y: currentState.position.y - previousState.position.y },
               spreadChange: currentState.spread - previousState.spread,
               startSpread: previousState.startSpread || currentState.spread
             };
-            if (currentState.touchCount == 1) this.el.emit("onefingermove", touchDetail); // Drag
-            if (currentState.touchCount == 2) this.el.emit("twofingermove", touchDetail); // Pinch
+            if (currentState.touchCount == 1) this.el.emit("onefingermove", touchDetail);
+            if (currentState.touchCount == 2) this.el.emit("twofingermove", touchDetail);
           }
           this.internalState.previousState = currentState;
         },
@@ -48,7 +56,6 @@
         }
       });
 
-      // Component to actually move/scale the model
       AFRAME.registerComponent('gesture-handler', {
         schema: { minScale: { default: 0.1 }, maxScale: { default: 8 }, rotationFactor: { default: 5 } },
         init: function () {
@@ -56,18 +63,13 @@
           this.handleRotation = this.handleRotation.bind(this);
           this.scaleFactor = 1;
           this.isVisible = false;
-          
-          // Only allow interaction when visible
           this.el.sceneEl.addEventListener("markerFound", (e) => { this.isVisible = true; });
           this.el.sceneEl.addEventListener("markerLost", (e) => { this.isVisible = false; });
-          
           this.el.sceneEl.addEventListener("twofingermove", this.handleScale);
           this.el.sceneEl.addEventListener("onefingermove", this.handleRotation);
         },
         handleRotation: function (event) {
-          if (this.isVisible) {
-            this.el.object3D.rotation.y += event.detail.positionChange.x * (this.data.rotationFactor / 1000);
-          }
+          if (this.isVisible) this.el.object3D.rotation.y += event.detail.positionChange.x * (this.data.rotationFactor / 1000);
         },
         handleScale: function (event) {
           if (this.isVisible) {
@@ -80,13 +82,12 @@
     </script>
 
     <style>
-        /* BASE STYLES */
+        /* STYLES */
         body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #1a1a2e; color: white; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: none; flex-direction: column; background-color: #1a1a2e; }
         .active-screen { display: flex; }
         #ar-scene-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; visibility: hidden; }
 
-        /* BUTTONS */
         .btn {
             background: linear-gradient(145deg, #f1c40f, #d4ac0d);
             border: none; padding: 15px 30px; margin: 10px;
@@ -94,47 +95,27 @@
             box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); font-family: 'Cinzel', serif; transition: transform 0.1s;
         }
         .btn:active { transform: scale(0.95); }
-        .btn:disabled { background: #555; color: #aaa; box-shadow: none; }
         .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
 
-        /* SCREENS */
         #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
         #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
         #info-screen { padding: 30px; overflow-y: auto; }
         .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
 
-        /* SCANNER UI */
-        #scan-ui {
-            position: absolute; bottom: 30px; left: 0; width: 100%;
-            z-index: 20; display: none; text-align: center; pointer-events: none;
-        }
+        #scan-ui { position: absolute; bottom: 30px; left: 0; width: 100%; z-index: 20; display: none; text-align: center; pointer-events: none; }
         #scan-ui button { pointer-events: auto; }
-        .scan-guide {
-            background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px;
-            color: white; border: 1px solid #f1c40f; display: inline-block; margin-bottom: 15px;
-        }
+        .scan-guide { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px; color: white; border: 1px solid #f1c40f; display: inline-block; margin-bottom: 15px; }
 
-        /* DEBUG LOG */
-        #debug-log {
-            position: fixed; top: 0; left: 0; width: 100%; background: rgba(200,0,0,0.8);
-            color: white; font-size: 12px; padding: 5px; text-align: center; display: none; z-index: 99999;
-        }
-
-        /* QUIZ POPUP */
-        #quiz-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 9999;
-            display: none; align-items: center; justify-content: center;
-        }
+        #debug-log { position: fixed; top: 0; left: 0; width: 100%; background: rgba(200,0,0,0.8); color: white; font-size: 12px; padding: 5px; text-align: center; display: block; z-index: 99999; }
+        #quiz-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; }
         .quiz-content { background: white; color: black; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="debug-log">System Initializing...</div>
+    <div id="debug-log">Status: Initializing...</div>
 
     <div id="ar-scene-container">
-        
         <a-scene 
             mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
             embedded 
@@ -166,38 +147,26 @@
 
     <div id="menu-screen" class="screen active-screen">
         <h1 style="font-size: 35px;">MALAYSIAN<br>ARCHITECTS</h1>
-        <p style="color: #ccc; margin-bottom: 40px;">Historical AR Scanner</p>
-        
         <button class="btn" onclick="openInfo('hubback')">A.B. HUBBACK</button>
         <button class="btn" onclick="openInfo('norman')">A.C. NORMAN</button>
     </div>
 
     <div id="info-screen" class="screen">
         <button class="btn-secondary" onclick="goBack()" style="align-self: flex-start; padding: 8px 15px; margin-bottom:10px;">&larr; BACK</button>
+        <h1 id="info-name">NAME</h1>
+        <div class="info-card"><h3 style="margin-top:0; color:#f1c40f;">Background</h3><p id="info-bg">...</p></div>
+        <div class="info-card"><h3 style="margin-top:0; color:#f1c40f;">Contribution</h3><p id="info-con">...</p></div>
         
-        <h1 id="info-name" style="margin-top: 10px;">NAME</h1>
-        
-        <div class="info-card">
-            <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
-            <p id="info-bg">...</p>
-        </div>
-
-        <div class="info-card">
-            <h3 style="margin-top:0; color:#f1c40f;">Contribution</h3>
-            <p id="info-con">...</p>
-        </div>
-
         <div style="display:flex; justify-content: space-between; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
-            <button id="start-scan-btn" class="btn" onclick="startScanning()" style="width:48%" disabled>
-                ⌛ LOADING...
+            <button id="start-scan-btn" class="btn" onclick="startScanning()" style="width:48%">
+                START SCANNING
             </button>
         </div>
     </div>
 
     <div id="scan-ui">
-        <div class="scan-guide">📷 Point camera at the Target Image</div>
-        <p style="font-size:12px; color:#ccc;">Pinch to Zoom • Drag to Rotate</p>
+        <div class="scan-guide">📷 Point camera at the Target</div>
         <button class="btn btn-secondary" onclick="stopScanning()">STOP SCANNING</button>
     </div>
 
@@ -210,53 +179,23 @@
     </div>
 
     <script>
-        // --- LOGGER ---
         function log(msg) {
             const el = document.getElementById('debug-log');
-            if(el) { el.style.display = 'block'; el.innerText = "Status: " + msg; }
+            if(el) el.innerText = "Status: " + msg;
             console.log(msg);
         }
 
-        // --- 1. DATABASE ---
         const db = {
-            hubback: {
-                name: "A.B. HUBBACK",
-                bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant.",
-                con: "He designed the Jamek Mosque and KL Railway Station.",
-                model: "#hubback-model",
-                quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
-            },
-            norman: {
-                name: "A.C. NORMAN",
-                bg: "Arthur Charles Norman was a British architect.",
-                con: "He is best known for the ground plan of the Sultan Abdul Samad Building.",
-                model: "#norman-model",
-                quiz: { q: "What is Norman's famous building?", a: ["KL Tower", "Sultan Abdul Samad", "Jamek Mosque"], correct: 1 }
-            }
+            hubback: { name: "A.B. HUBBACK", bg: "British Brigadier General.", con: "Designed Jamek Mosque.", model: "#hubback-model", quiz: { q: "Style?", a: ["Indo-Saracenic", "Gothic"], correct: 0 } },
+            norman: { name: "A.C. NORMAN", bg: "British Architect.", con: "Designed Sultan Abdul Samad.", model: "#norman-model", quiz: { q: "Building?", a: ["KL Tower", "Sultan Abdul Samad"], correct: 1 } }
         };
 
         let currentId = null;
-
-        // --- 2. SYSTEM MONITOR ---
         const scene = document.querySelector('a-scene');
-        const startBtn = document.getElementById('start-scan-btn');
 
-        // Wait for AR System to be ready
-        scene.addEventListener('loaded', () => {
-            log("✅ AR Engine Ready.");
-            startBtn.disabled = false;
-            startBtn.innerText = "START EXPLORING";
-        });
-        
-        // Safety Timer (in case 'loaded' event is missed)
-        setTimeout(() => {
-            if(scene.hasLoaded) {
-                startBtn.disabled = false;
-                startBtn.innerText = "START EXPLORING";
-            }
-        }, 3000);
+        // Monitor Loading
+        scene.addEventListener('loaded', () => log("✅ Ready to Scan"));
 
-        // --- 3. NAVIGATION ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             if(id) document.getElementById(id).classList.add('active-screen');
@@ -272,51 +211,33 @@
 
         function goBack() { showScreen('menu-screen'); }
 
-        // --- 4. SCANNING LOGIC ---
         function startScanning() {
-            log("Opening Camera...");
-            
-            // 1. Swap the Model
+            // CHECK IF ENGINE IS ACTUALLY READY
+            if (!scene.systems['mindar-image-system']) {
+                alert("⚠️ AR Engine is not ready yet.\n\n1. Check Internet\n2. Wait 5 seconds\n3. Check if 'targets.mind' exists.");
+                return;
+            }
+
+            log("Starting Camera...");
             const entity = document.getElementById('ar-model-entity');
             entity.setAttribute('gltf-model', db[currentId].model);
             
-            // 2. Hide UI & Show AR
             showScreen(null); 
             document.getElementById('scan-ui').style.display = 'block';
             document.getElementById('ar-scene-container').style.visibility = 'visible';
-            
-            // 3. Make Background Transparent (CRITICAL)
             document.body.style.backgroundColor = 'transparent';
 
-            // 4. Start Engine
-            if (scene.systems['mindar-image-system']) {
-                scene.systems['mindar-image-system'].start();
-            } else {
-                alert("AR System not ready. Check internet connection.");
-                stopScanning();
-            }
+            scene.systems['mindar-image-system'].start();
         }
 
         function stopScanning() {
-            log("Stopping Camera...");
-            
-            // Stop Engine
-            if (scene.systems['mindar-image-system']) {
-                scene.systems['mindar-image-system'].stop();
-            }
-            
-            // Restore UI
+            if (scene.systems['mindar-image-system']) scene.systems['mindar-image-system'].stop();
             document.getElementById('scan-ui').style.display = 'none';
             document.getElementById('ar-scene-container').style.visibility = 'hidden';
-            
-            // Restore Background
             document.body.style.backgroundColor = '#1a1a2e';
-            
-            // Return to Info
             showScreen('info-screen');
         }
 
-        // --- 5. QUIZ LOGIC ---
         function startQuiz() {
             const data = db[currentId].quiz;
             document.getElementById('q-text').innerText = data.q;
@@ -333,9 +254,7 @@
             document.getElementById('quiz-modal').style.display = 'flex';
         }
 
-        function closeQuiz() {
-            document.getElementById('quiz-modal').style.display = 'none';
-        }
+        function closeQuiz() { document.getElementById('quiz-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
