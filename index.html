@@ -35,19 +35,29 @@
         .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
         
         /* --- 3. AR SCREEN --- */
-        #ar-screen { background: black; }
+        #ar-screen { background: radial-gradient(circle, #2c3e50 0%, #000000 100%); }
         model-viewer { width: 100%; height: 100%; }
-        
-        /* AR OVERLAYS */
+
+        /* THE GIANT "START CAMERA" BUTTON */
+        #ar-activate-btn {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background-color: white; color: black; padding: 20px 40px;
+            font-size: 18px; font-weight: bold; border-radius: 40px; border: 4px solid #f1c40f;
+            display: none; /* Hidden until scanning finishes */
+            z-index: 100;
+        }
+
+        /* FAKE SCANNER ANIMATION */
         #scanner-ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6); z-index: 50;
         }
         .scan-box {
             width: 250px; height: 250px; border: 4px solid rgba(255,255,255,0.5);
             border-radius: 20px; position: relative; overflow: hidden;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); /* Dim the rest of screen */
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.8);
         }
         .scan-line {
             width: 100%; height: 4px; background: #f1c40f;
@@ -87,7 +97,6 @@
         <button class="btn-secondary" onclick="goBack('menu')" style="align-self: flex-start; padding: 8px 15px;">&larr; BACK</button>
         
         <h1 id="info-name" style="margin-top: 20px;">NAME HERE</h1>
-        <img id="info-img" src="" style="width:100%; height:200px; object-fit:cover; border-radius:10px; margin-bottom:20px; display:none;">
         
         <div class="info-card">
             <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
@@ -101,7 +110,7 @@
 
         <div style="display:flex; justify-content: space-between; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
-            <button class="btn" onclick="startAR()" style="width:48%">START EXPLORING</button>
+            <button class="btn" onclick="prepareAR()" style="width:48%">START EXPLORING</button>
         </div>
     </div>
 
@@ -116,13 +125,18 @@
             camera-controls 
             auto-rotate 
             shadow-intensity="1">
+            
+            <button slot="ar-button" id="ar-activate-btn">
+                📷 OPEN CAMERA
+            </button>
+
         </model-viewer>
 
         <div id="scanner-ui">
             <h2 style="position:absolute; top: 15%;">SCANNING...</h2>
             <div class="scan-box"><div class="scan-line"></div></div>
             <p style="position:absolute; bottom: 20%; text-align:center; padding:0 20px;">
-                Point camera at floor or flat surface to spawn the model.
+                Analyzing Environment...
             </p>
         </div>
 
@@ -146,8 +160,8 @@
                 name: "A.B. HUBBACK",
                 bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant to the Director of Public Works.",
                 con: "He designed the Jamek Mosque, KL Railway Station, and the Ubudiah Mosque.",
-                model: "./hubback.glb",       // Ensure this file exists
-                ios: "./hubback.usdz",        // Ensure this file exists
+                model: "./hubback.glb",       
+                ios: "./hubback.usdz",        
                 quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
             },
             norman: {
@@ -185,26 +199,29 @@
             showScreen('info-screen');
         }
 
-        // --- 3. AR LOGIC ---
-        function startAR() {
+        // --- 3. AR PREPARATION ---
+        function prepareAR() {
             const data = db[currentId];
             const viewer = document.getElementById('ar-viewer');
-            
+            const scanUI = document.getElementById('scanner-ui');
+            const realBtn = document.getElementById('ar-activate-btn');
+
             // Load correct model
             viewer.src = data.model;
             viewer.setAttribute('ios-src', data.ios);
             
+            // Switch Screen
             showScreen('ar-screen');
 
-            // Simulate "Scanning" for 2 seconds then hide UI
-            const scanUI = document.getElementById('scanner-ui');
-            scanUI.style.display = 'flex';
-            
-            // Note: In real WebAR, the 'AR' button inside model-viewer triggers the camera.
-            // We show our scanner UI until the user enters AR mode manually or we fade it out.
+            // Reset UI States
+            scanUI.style.display = 'flex'; // Show Scanner
+            realBtn.style.display = 'none'; // Hide Camera Button initially
+
+            // Play "Scanning" animation for 2.5 seconds
             setTimeout(() => {
-                scanUI.style.display = 'none'; // Hide scanner after 2 seconds
-            }, 3000);
+                scanUI.style.display = 'none'; // Hide Scanner
+                realBtn.style.display = 'block'; // Show Real Button
+            }, 2500);
         }
 
         // --- 4. QUIZ LOGIC ---
