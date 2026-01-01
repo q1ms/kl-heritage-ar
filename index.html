@@ -1,88 +1,104 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>3D Box Depth Test</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>AR.js History Museum</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-      body { margin: 0; overflow: hidden; background: #000; font-family: monospace; }
+      body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; }
       
-      /* DEBUG LOG */
-      #debug-log {
-        position: fixed; top: 0; left: 0; padding: 10px; color: #00FF00;
-        background: rgba(0,0,0,0.5); z-index: 9999; pointer-events: none;
+      /* FORCE CANVAS ON TOP (Crucial for some Androids) */
+      canvas { z-index: 999 !important; position: relative; }
+      video { z-index: 1 !important; }
+
+      /* UI OVERLAYS */
+      #ui-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 10000;
+        display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+      }
+      
+      /* SCANNER GUIDE */
+      #scan-guide {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 250px; height: 250px;
+        border: 4px solid rgba(241, 196, 15, 0.8);
+        border-radius: 20px;
+        display: flex; justify-content: center; align-items: center;
+        text-align: center; color: #f1c40f; font-family: 'Cinzel', serif;
+        box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
       }
 
-      /* SLIDER CONTROLS */
-      #controls {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-        background: rgba(255, 255, 255, 0.9); z-index: 9999;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
+      /* INFO PANEL */
+      #holo-panel {
+        position: fixed; top: 10%; left: 5%; width: 90%; height: 60%;
+        background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
+        border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
+        display: none; flex-direction: column; pointer-events: auto; z-index: 10001;
       }
-      input[type=range] { width: 80%; margin: 10px; }
-      label { color: black; font-weight: bold; font-size: 16px; }
+      #holo-content { overflow-y: auto; line-height: 1.6; margin-top:10px; }
+      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
+
     </style>
   </head>
-  <body>
 
-    <div id="debug-log">
-      System Ready.<br>
-      Red Box Z: <span id="log-z">-0.5</span>
+  <body style="margin: 0; overflow: hidden;">
+
+    <div id="scan-guide">
+      <p>SCAN HIRO MARKER</p>
     </div>
 
-    <div id="controls">
-      <label>MOVE RED BOX (DEPTH)</label>
-      <input type="range" id="z-slider" min="-10" max="-0.1" step="0.1" value="-0.5" oninput="updateBox()">
+    <div id="holo-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Info</h2>
+        <button class="holo-close" onclick="document.getElementById('holo-panel').style.display='none'">CLOSE</button>
+      </div>
+      <div id="holo-content">Content goes here...</div>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind; autoStart: true;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, sortObjects: true" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+      
+      <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
 
-      <a-camera position="0 0 0" look-controls="enabled: false">
+      <a-marker preset="hiro">
         
-        <a-box id="red-box" position="0 0 -0.5" scale="0.2 0.2 0.2" color="red"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-        </a-box>
+        <a-entity rotation="-90 0 0">
+            
+            <a-box position="0 0.5 0" depth="0.1" height="1.5" width="2.2" color="#2c3e50" opacity="0.9">
+            </a-box>
+            <a-image src="https://via.placeholder.com/300x300.png?text=Historical+Figure" 
+                     position="-0.6 0.5 0.06" width="0.8" height="0.8"></a-image>
 
-        <a-box position="0.5 0.5 -2" scale="0.3 0.3 0.3" color="blue"
-               animation="property: rotation; to: 360 0 0; loop: true; dur: 4000">
-        </a-box>
+            <a-text value="A.B. HUBBACK" position="0.3 0.8 0.06" color="#f1c40f" width="4" font="mozillavr"></a-text>
 
-        <a-box position="-0.5 -0.5 -5" scale="0.5 0.5 0.5" color="yellow"
-               animation="property: rotation; to: 0 0 360; loop: true; dur: 5000">
-        </a-box>
-        
-        <a-text value="IF YOU SEE THIS TEXT, AR IS WORKING" 
-                color="white" align="center" position="0 0 -3" scale="1.5 1.5 1.5">
-        </a-text>
+            <a-box class="clickable" position="0.5 0.5 0.1" width="1.2" height="0.25" depth="0.05" color="#3498db"
+                   onclick="showInfo('Background info about Hubback...')">
+                <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06" scale="1.5 1.5 1.5"></a-text>
+            </a-box>
 
-      </a-camera>
+            <a-box class="clickable" position="0.5 0.15 0.1" width="1.2" height="0.25" depth="0.05" color="#3498db"
+                   onclick="showInfo('Hubback designed the Jamek Mosque...')">
+                <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06" scale="1.5 1.5 1.5"></a-text>
+            </a-box>
+            
+        </a-entity>
 
-      <a-light type="ambient" intensity="2"></a-light>
-      <a-light type="directional" position="0 0 1" intensity="1.5"></a-light>
+      </a-marker>
 
+      <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      function updateBox() {
-        const slider = document.getElementById('z-slider');
-        const val = slider.value;
-        
-        // Update Red Box Position
-        const box = document.getElementById('red-box');
-        if (box) {
-          box.setAttribute('position', `0 0 ${val}`);
-        }
-
-        // Update Text Log
-        document.getElementById('log-z').innerText = val;
+      function showInfo(text) {
+        const panel = document.getElementById('holo-panel');
+        const content = document.getElementById('holo-content');
+        content.innerText = text;
+        panel.style.display = 'flex';
       }
     </script>
-
   </body>
 </html>
