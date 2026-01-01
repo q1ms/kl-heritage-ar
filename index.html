@@ -3,100 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>History AR App</title>
+    <title>History AR Scanner</title>
     
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
-    
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- GLOBAL STYLES --- */
-        body { margin: 0; background: #1a1a2e; font-family: 'Lato', sans-serif; overflow: hidden; color: white; }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; }
-        .active-screen { display: flex; }
+        /* --- UI STYLING (Same as before) --- */
+        body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background: #1a1a2e; color: white; }
         
+        /* FULLSCREEN OVERLAYS */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: none; flex-direction: column; background: #1a1a2e; }
+        .active-screen { display: flex; }
+
+        /* AR VIEW (Hidden by default, behind UI) */
+        #ar-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; visibility: hidden; }
+
+        /* BUTTONS & TEXT */
         h1, h2 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .btn {
             background: linear-gradient(145deg, #f1c40f, #d4ac0d);
             border: none; padding: 15px 30px; margin: 10px;
             border-radius: 50px; font-weight: bold; font-size: 16px; color: #1a1a2e;
             box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); cursor: pointer;
-            font-family: 'Cinzel', serif; transition: transform 0.1s;
+            font-family: 'Cinzel', serif;
         }
-        .btn:active { transform: scale(0.95); }
         .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
 
-        /* --- 1. MAIN MENU --- */
+        /* MENU SCREEN */
         #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
         #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
-        
-        /* --- 2. INFO SCREEN --- */
-        #info-screen { padding: 30px; box-sizing: border-box; background: #1a1a2e; overflow-y: auto; }
+
+        /* INFO SCREEN */
+        #info-screen { padding: 30px; box-sizing: border-box; overflow-y: auto; }
         .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
-        
-        /* --- 3. AR SCREEN --- */
-        #ar-screen { background: radial-gradient(circle, #2c3e50 0%, #000000 100%); }
-        model-viewer { width: 100%; height: 100%; }
 
-        /* THE GIANT "START CAMERA" BUTTON */
-        #ar-activate-btn {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background-color: white; color: black; padding: 20px 40px;
-            font-size: 18px; font-weight: bold; border-radius: 40px; border: 4px solid #f1c40f;
-            display: none; /* Hidden until scanning finishes */
-            z-index: 100;
+        /* SCANNER OVERLAY (Only visible during AR) */
+        #scan-overlay {
+            position: absolute; bottom: 30px; left: 0; width: 100%;
+            text-align: center; display: none; z-index: 20; pointer-events: none;
         }
+        #scan-message {
+            background: rgba(0,0,0,0.7); color: white; padding: 10px 20px;
+            border-radius: 20px; display: inline-block; margin-bottom: 10px;
+            border: 1px solid #f1c40f;
+        }
+        #exit-ar-btn { pointer-events: auto; }
 
-        /* FAKE SCANNER ANIMATION */
-        #scanner-ui {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.6); z-index: 50;
-        }
-        .scan-box {
-            width: 250px; height: 250px; border: 4px solid rgba(255,255,255,0.5);
-            border-radius: 20px; position: relative; overflow: hidden;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.8);
-        }
-        .scan-line {
-            width: 100%; height: 4px; background: #f1c40f;
-            position: absolute; top: 0; left: 0;
-            animation: scan 2s infinite linear;
-            box-shadow: 0 0 15px #f1c40f;
-        }
-        @keyframes scan { 0% {top:0%} 50% {top:100%} 100% {top:0%} }
-        
-        #ar-controls {
-            position: absolute; bottom: 20px; left: 0; width: 100%;
-            display: flex; justify-content: center; gap: 10px; pointer-events: none;
-        }
-        #ar-controls button { pointer-events: auto; }
-
-        /* --- 4. QUIZ POPUP --- */
+        /* QUIZ MODAL */
         #quiz-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 9999;
             display: none; align-items: center; justify-content: center;
         }
         .quiz-content { background: white; color: black; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; }
-
     </style>
 </head>
 <body>
 
+    <div id="ar-container">
+        <a-scene 
+            mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
+            embedded color-space="sRGB" 
+            renderer="colorManagement: true, physicallyCorrectLights" 
+            vr-mode-ui="enabled: false" 
+            device-orientation-permission-ui="enabled: false">
+            
+            <a-assets>
+                <a-asset-item id="hubback-model" src="./hubback.glb"></a-asset-item>
+                <a-asset-item id="norman-model" src="./norman.glb"></a-asset-item>
+            </a-assets>
+
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-entity 
+                    id="ar-model-entity"
+                    gltf-model="#hubback-model" 
+                    rotation="0 0 0" 
+                    position="0 0 0.1" 
+                    scale="0.5 0.5 0.5" 
+                ></a-entity>
+            </a-entity>
+        </a-scene>
+    </div>
+
     <div id="menu-screen" class="screen active-screen">
         <h1 style="font-size: 40px; margin-bottom: 10px;">ARCHITECTS</h1>
-        <p style="color: #ccc; margin-bottom: 40px;">History AR Experience</p>
-        
+        <p style="color: #ccc; margin-bottom: 40px;">Scan the Building to Unlock History</p>
         <button class="btn" onclick="openInfo('hubback')">A.B. HUBBACK</button>
         <button class="btn" onclick="openInfo('norman')">A.C. NORMAN</button>
     </div>
 
     <div id="info-screen" class="screen">
-        <button class="btn-secondary" onclick="goBack('menu')" style="align-self: flex-start; padding: 8px 15px;">&larr; BACK</button>
+        <button class="btn-secondary" onclick="goBack('menu')" style="align-self: flex-start; padding: 8px 15px; margin-bottom:10px;">&larr; BACK</button>
         
-        <h1 id="info-name" style="margin-top: 20px;">NAME HERE</h1>
+        <h1 id="info-name" style="margin-top: 10px;">NAME HERE</h1>
         
         <div class="info-card">
             <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
@@ -110,151 +114,117 @@
 
         <div style="display:flex; justify-content: space-between; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
-            <button class="btn" onclick="prepareAR()" style="width:48%">START EXPLORING</button>
+            <button class="btn" onclick="startScanning()" style="width:48%">START SCANNING</button>
         </div>
     </div>
 
-    <div id="ar-screen" class="screen">
-        
-        <model-viewer 
-            id="ar-viewer"
-            src="" 
-            ios-src=""
-            ar 
-            ar-modes="webxr scene-viewer quick-look" 
-            camera-controls 
-            auto-rotate 
-            shadow-intensity="1">
-            
-            <button slot="ar-button" id="ar-activate-btn">
-                📷 OPEN CAMERA
-            </button>
-
-        </model-viewer>
-
-        <div id="scanner-ui">
-            <h2 style="position:absolute; top: 15%;">SCANNING...</h2>
-            <div class="scan-box"><div class="scan-line"></div></div>
-            <p style="position:absolute; bottom: 20%; text-align:center; padding:0 20px;">
-                Analyzing Environment...
-            </p>
-        </div>
-
-        <div id="ar-controls">
-            <button class="btn btn-secondary" onclick="goBack('info')">EXIT AR</button>
-        </div>
+    <div id="scan-overlay">
+        <div id="scan-message">📷 Point camera at the Building Photo</div>
+        <br>
+        <button id="exit-ar-btn" class="btn btn-secondary" onclick="stopScanning()">STOP SCANNING</button>
     </div>
 
     <div id="quiz-modal">
         <div class="quiz-content">
-            <h2 id="q-text">Question goes here?</h2>
+            <h2 id="q-text">Question?</h2>
             <div id="q-options"></div>
             <button class="btn btn-secondary" onclick="closeQuiz()" style="margin-top:20px;">CLOSE</button>
         </div>
     </div>
 
     <script>
-        // --- 1. DATA ---
+        // 1. DATA
         const db = {
             hubback: {
                 name: "A.B. HUBBACK",
-                bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant to the Director of Public Works.",
-                con: "He designed the Jamek Mosque, KL Railway Station, and the Ubudiah Mosque.",
-                model: "./hubback.glb",       
-                ios: "./hubback.usdz",        
+                bg: "British Brigadier General and Architect.",
+                con: "Designed Jamek Mosque & KL Railway Station.",
+                modelId: "#hubback-model",
                 quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
             },
             norman: {
                 name: "A.C. NORMAN",
-                bg: "Arthur Charles Norman was a British architect who served as the Senior Government Architect of the FMS.",
-                con: "He is best known for the ground plan of the Sultan Abdul Samad Building.",
-                model: "./norman.glb",
-                ios: "./norman.usdz",
+                bg: "Senior Government Architect of the FMS.",
+                con: "Created ground plans for Sultan Abdul Samad Building.",
+                modelId: "#norman-model",
                 quiz: { q: "What is Norman's famous building?", a: ["KL Tower", "Sultan Abdul Samad", "Jamek Mosque"], correct: 1 }
             }
         };
 
         let currentId = null;
+        const arScene = document.querySelector('a-scene');
+        const arContainer = document.getElementById('ar-container');
+        const scanOverlay = document.getElementById('scan-overlay');
 
-        // --- 2. NAVIGATION ---
+        // 2. NAVIGATION
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
-        }
-
-        function goBack(target) {
-            if(target === 'menu') showScreen('menu-screen');
-            if(target === 'info') showScreen('info-screen');
+            if(id) document.getElementById(id).classList.add('active-screen');
         }
 
         function openInfo(id) {
             currentId = id;
-            const data = db[id];
-            
-            // Populate Info
-            document.getElementById('info-name').innerText = data.name;
-            document.getElementById('info-bg').innerText = data.bg;
-            document.getElementById('info-con').innerText = data.con;
-            
+            document.getElementById('info-name').innerText = db[id].name;
+            document.getElementById('info-bg').innerText = db[id].bg;
+            document.getElementById('info-con').innerText = db[id].con;
             showScreen('info-screen');
         }
 
-        // --- 3. AR PREPARATION ---
-        function prepareAR() {
-            const data = db[currentId];
-            const viewer = document.getElementById('ar-viewer');
-            const scanUI = document.getElementById('scanner-ui');
-            const realBtn = document.getElementById('ar-activate-btn');
-
-            // Load correct model
-            viewer.src = data.model;
-            viewer.setAttribute('ios-src', data.ios);
-            
-            // Switch Screen
-            showScreen('ar-screen');
-
-            // Reset UI States
-            scanUI.style.display = 'flex'; // Show Scanner
-            realBtn.style.display = 'none'; // Hide Camera Button initially
-
-            // Play "Scanning" animation for 2.5 seconds
-            setTimeout(() => {
-                scanUI.style.display = 'none'; // Hide Scanner
-                realBtn.style.display = 'block'; // Show Real Button
-            }, 2500);
+        function goBack(target) {
+            showScreen(target === 'menu' ? 'menu-screen' : 'info-screen');
         }
 
-        // --- 4. QUIZ LOGIC ---
+        // 3. START AR (CAMERA)
+        function startScanning() {
+            // Hide all UI screens
+            showScreen(null);
+            
+            // Show AR Container & Overlay
+            arContainer.style.visibility = 'visible';
+            scanOverlay.style.display = 'block';
+
+            // Swap the 3D Model based on who we selected
+            const entity = document.getElementById('ar-model-entity');
+            entity.setAttribute('gltf-model', db[currentId].modelId);
+
+            // Start the Camera Engine
+            // We use the MindAR system to start video processing
+            arScene.systems["mindar-image-system"].start();
+        }
+
+        // 4. STOP AR
+        function stopScanning() {
+            // Stop Camera Engine to save battery/performance
+            arScene.systems["mindar-image-system"].stop();
+            
+            // Hide AR View
+            arContainer.style.visibility = 'hidden';
+            scanOverlay.style.display = 'none';
+
+            // Go back to Info Screen
+            showScreen('info-screen');
+        }
+
+        // 5. QUIZ
         function startQuiz() {
             const data = db[currentId].quiz;
-            const modal = document.getElementById('quiz-modal');
-            const qText = document.getElementById('q-text');
-            const qOpts = document.getElementById('q-options');
-
-            qText.innerText = data.q;
-            qOpts.innerHTML = ''; // Clear old buttons
-
-            // Create buttons for answers
-            data.a.forEach((ans, index) => {
+            document.getElementById('q-text').innerText = data.q;
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = '';
+            data.a.forEach((ans, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'btn';
                 btn.style.width = '100%';
-                btn.style.margin = '5px 0';
                 btn.innerText = ans;
-                btn.onclick = () => {
-                    if(index === data.correct) alert("CORRECT!");
-                    else alert("Try Again!");
-                };
-                qOpts.appendChild(btn);
+                btn.onclick = () => alert(idx === data.correct ? "CORRECT!" : "Try Again!");
+                opts.appendChild(btn);
             });
-
-            modal.style.display = 'flex';
+            document.getElementById('quiz-modal').style.display = 'flex';
         }
 
         function closeQuiz() {
             document.getElementById('quiz-modal').style.display = 'none';
         }
-
     </script>
 </body>
 </html>
