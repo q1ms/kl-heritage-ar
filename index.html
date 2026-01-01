@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sultan Abdul Samad AR Experience</title>
+    <title>Sultan Abdul Samad AR (Test Mode)</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <script>
@@ -72,13 +71,11 @@
     </script>
 
     <style>
-        /* BASE STYLES */
         body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #1a1a2e; color: white; }
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: none; flex-direction: column; background-color: #1a1a2e; }
         .active-screen { display: flex; }
         #ar-scene-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; visibility: hidden; }
 
-        /* BUTTONS */
         .btn {
             background: linear-gradient(145deg, #f1c40f, #d4ac0d);
             border: none; padding: 15px 30px; margin: 10px;
@@ -88,17 +85,14 @@
         .btn:active { transform: scale(0.95); }
         .btn-secondary { background: #2c3e50; color: #f1c40f; border: 2px solid #f1c40f; }
 
-        /* UI COMPONENTS */
         #menu-screen { align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1599940824399-b87987ced7bb?q=80&w=1000') center/cover; }
         #menu-screen::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:-1; }
-        
         #info-screen { padding: 30px; overflow-y: auto; }
         .info-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid #f1c40f; }
 
         #scan-ui { position: absolute; bottom: 30px; left: 0; width: 100%; z-index: 20; display: none; text-align: center; pointer-events: none; }
         #scan-ui button { pointer-events: auto; }
         .scan-guide { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px; color: white; border: 1px solid #f1c40f; display: inline-block; margin-bottom: 15px; }
-
         #quiz-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; }
         .quiz-content { background: white; color: black; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; }
     </style>
@@ -107,7 +101,7 @@
 
     <div id="ar-scene-container">
         <a-scene 
-            mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
+            mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/examples/image-tracking/assets/card-example/card.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
             embedded 
             color-space="sRGB" 
             renderer="colorManagement: true, physicallyCorrectLights" 
@@ -144,25 +138,17 @@
 
     <div id="info-screen" class="screen">
         <button class="btn-secondary" onclick="goBack()" style="align-self: flex-start; padding: 8px 15px; margin-bottom:10px;">&larr; BACK</button>
-        <h1 id="info-name" style="margin-top: 10px;">NAME</h1>
-        <div class="info-card">
-            <h3 style="margin-top:0; color:#f1c40f;">Background</h3>
-            <p id="info-bg">...</p>
-        </div>
-        <div class="info-card">
-            <h3 style="margin-top:0; color:#f1c40f;">Contribution</h3>
-            <p id="info-con">...</p>
-        </div>
+        <h1 id="info-name">NAME</h1>
+        <div class="info-card"><h3 style="margin-top:0; color:#f1c40f;">Background</h3><p id="info-bg">...</p></div>
+        <div class="info-card"><h3 style="margin-top:0; color:#f1c40f;">Contribution</h3><p id="info-con">...</p></div>
         <div style="display:flex; justify-content: space-between; margin-top: 20px;">
             <button class="btn btn-secondary" onclick="startQuiz()" style="width:48%">TAKE QUIZ</button>
-            <button id="start-scan-btn" class="btn" onclick="startScanning()" style="width:48%">
-                START SCANNING
-            </button>
+            <button id="start-scan-btn" class="btn" onclick="startScanning()" style="width:48%">START SCANNING</button>
         </div>
     </div>
 
     <div id="scan-ui">
-        <div class="scan-guide">📷 Point camera at the Building Photo</div>
+        <div class="scan-guide">📷 Point camera at the CARD Image</div>
         <button class="btn btn-secondary" onclick="stopScanning()">STOP SCANNING</button>
     </div>
 
@@ -176,26 +162,13 @@
 
     <script>
         const db = {
-            hubback: {
-                name: "A.B. HUBBACK",
-                bg: "Arthur Benison Hubback was a British Brigadier General and architectural assistant to the Director of Public Works.",
-                con: "He designed the Jamek Mosque, KL Railway Station, and the Ubudiah Mosque.",
-                model: "#hubback-model",
-                quiz: { q: "Which style did Hubback use?", a: ["Indo-Saracenic", "Gothic", "Modern"], correct: 0 }
-            },
-            norman: {
-                name: "A.C. NORMAN",
-                bg: "Arthur Charles Norman was a British architect who served as the Senior Government Architect of the FMS.",
-                con: "He is best known for the ground plan of the Sultan Abdul Samad Building.",
-                model: "#norman-model",
-                quiz: { q: "What is Norman's famous building?", a: ["KL Tower", "Sultan Abdul Samad", "Jamek Mosque"], correct: 1 }
-            }
+            hubback: { name: "A.B. HUBBACK", bg: "British Brigadier General.", con: "Designed Jamek Mosque.", model: "#hubback-model", quiz: { q: "Style?", a: ["Indo-Saracenic", "Gothic"], correct: 0 } },
+            norman: { name: "A.C. NORMAN", bg: "British Architect.", con: "Designed Sultan Abdul Samad.", model: "#norman-model", quiz: { q: "Building?", a: ["KL Tower", "Sultan Abdul Samad"], correct: 1 } }
         };
 
         let currentId = null;
         const scene = document.querySelector('a-scene');
 
-        // Navigation
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             if(id) document.getElementById(id).classList.add('active-screen');
@@ -211,39 +184,26 @@
 
         function goBack() { showScreen('menu-screen'); }
 
-        // Scanning Logic
         function startScanning() {
-            // Check if System is Ready
-            if (!scene.systems['mindar-image-system']) {
-                alert("System is still loading. Please wait 2 seconds and try again.");
-                return;
-            }
-
-            // Swap Model
+            if (!scene.systems['mindar-image-system']) { alert("System Loading..."); return; }
             const entity = document.getElementById('ar-model-entity');
             entity.setAttribute('gltf-model', db[currentId].model);
             
-            // Show AR, Hide UI
             showScreen(null); 
             document.getElementById('scan-ui').style.display = 'block';
             document.getElementById('ar-scene-container').style.visibility = 'visible';
             document.body.style.backgroundColor = 'transparent';
-
-            // Start Camera
             scene.systems['mindar-image-system'].start();
         }
 
         function stopScanning() {
-            if (scene.systems['mindar-image-system']) {
-                scene.systems['mindar-image-system'].stop();
-            }
+            if (scene.systems['mindar-image-system']) scene.systems['mindar-image-system'].stop();
             document.getElementById('scan-ui').style.display = 'none';
             document.getElementById('ar-scene-container').style.visibility = 'hidden';
             document.body.style.backgroundColor = '#1a1a2e';
             showScreen('info-screen');
         }
 
-        // Quiz Logic
         function startQuiz() {
             const data = db[currentId].quiz;
             document.getElementById('q-text').innerText = data.q;
@@ -259,10 +219,7 @@
             });
             document.getElementById('quiz-modal').style.display = 'flex';
         }
-
-        function closeQuiz() {
-            document.getElementById('quiz-modal').style.display = 'none';
-        }
+        function closeQuiz() { document.getElementById('quiz-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
