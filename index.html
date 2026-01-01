@@ -1,286 +1,257 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>Malaysian Architects AR</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Manual Gyro AR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
       body { margin: 0; overflow: hidden; font-family: 'Lato', sans-serif; background-color: #000; }
-      
-      /* --- UI LAYER (The "Menu" Screen) --- */
+
+      /* --- VIDEO BACKGROUND (The "Fake" AR) --- */
+      #cam-feed {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover; z-index: -1; /* Behind everything */
+        transform: scaleX(-1); /* Mirror effect like a selfie/mirror */
+      }
+
+      /* --- UI LAYER --- */
       #ui-layer {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 2000; pointer-events: auto;
-        background: #2c3e50;
-        display: flex; flex-direction: column; 
+        z-index: 2000; pointer-events: none; /* Let clicks pass through to canvas if needed */
+        display: flex; flex-direction: column;
       }
 
-      /* TITLE SCREEN */
-      #title-screen {
-        width: 100%; height: 100%;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
-        background: linear-gradient(135deg, #1a1a2e 0%, #0f1526 100%);
-        color: #f1c40f; text-align: center;
+      /* CONTROLS CONTAINER (Bottom) */
+      #controls-area {
+        position: absolute; bottom: 0; left: 0; width: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 15px 10px; border-top: 2px solid #f1c40f;
+        pointer-events: auto;
+        display: flex; flex-direction: column; align-items: center;
+        box-sizing: border-box;
       }
 
-      /* SELECTION CAROUSEL */
+      .control-row {
+        display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      }
+      .control-label { color: #f1c40f; font-weight: bold; width: 60px; font-size: 14px; }
+      input[type=range] { flex-grow: 1; margin: 0 10px; }
+      
+      .toggle-btn {
+        background: #34495e; color: white; border: 1px solid white; padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer;
+      }
+
+      /* SELECTION SCREEN (Overlay) */
       #selection-screen {
-        width: 100%; height: 100%; display: none;
-        flex-direction: column; justify-content: center; align-items: center;
-        background: #2c3e50;
-      }
-      .carousel-container { position: relative; width: 100%; height: 60%; display: flex; justify-content: center; align-items: center; }
-      
-      .carousel-card {
-        background: white; width: 260px; padding: 20px; border-radius: 20px;
-        text-align: center; border: 4px solid #f1c40f; display: none; 
-        flex-direction: column; align-items: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      }
-      .carousel-card.active { display: flex; } 
-      .carousel-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 2px solid #eee; }
-      
-      .btn-gold { 
-        background: #f1c40f; color: #1a1a2e; border: none; padding: 12px 30px; 
-        font-family: 'Cinzel', serif; font-size: 16px; border-radius: 30px; 
-        cursor: pointer; margin-top: 10px; font-weight: bold;
-      }
-      
-      .nav-btn { 
-        position: absolute; top: 50%; transform: translateY(-50%); 
-        background: rgba(241, 196, 15, 0.8); width: 50px; height: 50px; 
-        border-radius: 50%; border: none; font-size: 24px; cursor: pointer; z-index: 10; 
-      }
-      .prev-btn { left: 10px; } .next-btn { right: 10px; }
-
-      /* --- SCANNER OVERLAY (Visible when AR is active) --- */
-      #scan-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; z-index: 1000; display: none;
+        background: #2c3e50; z-index: 3000; pointer-events: auto;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
       }
-      #back-btn {
-        position: absolute; top: 20px; left: 20px; pointer-events: auto;
-        background: rgba(0,0,0,0.6); color: white; border: none; 
-        padding: 10px 15px; border-radius: 50%; font-size: 20px; cursor:pointer;
+      .card-container { display: flex; overflow-x: auto; width: 100%; padding: 20px; box-sizing: border-box; justify-content: center; }
+      .figure-card {
+        min-width: 200px; background: white; margin: 10px; padding: 15px; border-radius: 15px;
+        text-align: center; border: 3px solid #f1c40f; cursor: pointer;
       }
-      #scan-hint {
-        position: absolute; bottom: 30px; width: 100%; text-align: center;
-        color: rgba(255,255,255,0.7); font-size: 14px; text-shadow: 1px 1px 2px black;
-      }
+      .figure-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
+      .figure-card h3 { margin: 10px 0 0 0; color: #2c3e50; font-family: 'Cinzel', serif; }
 
-      /* --- INFO POPUP (Holo Panel) --- */
+      /* INFO POPUP */
       #holo-panel {
-        position: fixed; top: 15%; left: 5%; width: 90%; height: 60%;
+        position: fixed; top: 10%; left: 5%; width: 90%; height: 50%;
         background: rgba(16, 21, 30, 0.95); border: 2px solid #f1c40f;
         border-radius: 15px; color: #ecf0f1; padding: 20px; box-sizing: border-box;
         display: none; flex-direction: column; pointer-events: auto; z-index: 5000;
       }
-      #holo-content { overflow-y: auto; line-height: 1.6; margin-top:10px; font-size: 16px; }
-      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
+      .holo-close { align-self: flex-end; background: #e74c3c; color: white; border: none; padding: 5px 15px; border-radius: 5px; margin-bottom: 10px;}
 
     </style>
   </head>
 
   <body>
 
-    <div id="ui-layer">
-      
-      <div id="title-screen">
-        <h1 style="font-family:'Cinzel',serif; font-size:32px; padding: 0 20px;">The Architects of Malaysia</h1>
-        <button class="btn-gold" onclick="goToSelection()">ENTER GALLERY</button>
-      </div>
+    <video id="cam-feed" autoplay playsinline muted></video>
 
-      <div id="selection-screen">
-        <h2 style="color:white; font-family:'Cinzel',serif;">Select Architect</h2>
-        <div class="carousel-container">
-          <button class="nav-btn prev-btn" onclick="moveSlide(-1)">&#10094;</button>
-          <button class="nav-btn next-btn" onclick="moveSlide(1)">&#10095;</button>
-          
-          <div class="carousel-card active" id="card-0">
-             <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
-             <h3>A.B. Hubback</h3> 
-             <button class="btn-gold" onclick="launchAR('hubback')">VIEW IN 3D</button>
-          </div>
-          <div class="carousel-card" id="card-1">
-             <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
-             <h3>A.C. Norman</h3> 
-             <button class="btn-gold" onclick="launchAR('norman')">VIEW IN 3D</button>
-          </div>
-          <div class="carousel-card" id="card-2">
-             <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/200?text=Bidwell'">
-             <h3>R.A.J Bidwell</h3> 
-             <button class="btn-gold" onclick="launchAR('bidwell')">VIEW IN 3D</button>
-          </div>
-          <div class="carousel-card" id="card-3">
-             <img src="./assets/spooner.png" onerror="this.src='https://via.placeholder.com/200?text=Spooner'">
-             <h3>Charles Spooner</h3> 
-             <button class="btn-gold" onclick="launchAR('spooner')">VIEW IN 3D</button>
-          </div>
-          </div>
+    <div id="selection-screen">
+      <h1 style="color:#f1c40f; font-family:'Cinzel',serif;">Select Architect</h1>
+      <div class="card-container">
+        <div class="figure-card" onclick="startAR('hubback')">
+          <img src="./assets/hubback.png" onerror="this.src='https://via.placeholder.com/200?text=Hubback'">
+          <h3>Hubback</h3>
+        </div>
+        <div class="figure-card" onclick="startAR('norman')">
+          <img src="./assets/norman.png" onerror="this.src='https://via.placeholder.com/200?text=Norman'">
+          <h3>Norman</h3>
+        </div>
+        <div class="figure-card" onclick="startAR('bidwell')">
+          <img src="./assets/bidwell.png" onerror="this.src='https://via.placeholder.com/200?text=Bidwell'">
+          <h3>Bidwell</h3>
+        </div>
       </div>
+      <p style="color:white; margin-top:20px;">(Camera permission required)</p>
     </div>
 
-    <div id="scan-overlay">
-      <button id="back-btn" onclick="exitAR()">&#8592;</button>
-      <div id="scan-hint">Scan the <b>Hiro Marker</b> to view</div>
+    <div id="controls-area" style="display:none;">
+      
+      <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
+        <button class="toggle-btn" onclick="goBack()">&#8592; BACK</button>
+        <span style="color:white; font-size:12px;">ADJUST POSITION</span>
+        <button class="toggle-btn" onclick="resetPos()">RESET</button>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">X (Side)</span>
+        <input type="range" id="sl-x" min="-4" max="4" step="0.1" value="0" oninput="updatePos()">
+      </div>
+      <div class="control-row">
+        <span class="control-label">Y (Up)</span>
+        <input type="range" id="sl-y" min="-3" max="3" step="0.1" value="0" oninput="updatePos()">
+      </div>
+      <div class="control-row">
+        <span class="control-label">Z (Depth)</span>
+        <input type="range" id="sl-z" min="-8" max="-1" step="0.1" value="-4" oninput="updatePos()">
+      </div>
     </div>
 
     <div id="holo-panel">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="holo-title" style="margin:0; font-family:'Cinzel',serif; color:#f1c40f;">Info</h2>
-        <button class="holo-close" onclick="closeHolo()">CLOSE</button>
-      </div>
-      <div id="holo-content">Content...</div>
+      <button class="holo-close" onclick="document.getElementById('holo-panel').style.display='none'">CLOSE</button>
+      <h2 id="holo-title" style="margin:0; color:#f1c40f; font-family:'Cinzel',serif;">Title</h2>
+      <p id="holo-desc" style="line-height:1.5;">Description...</p>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+    <a-scene embedded renderer="alpha: true; colorManagement: true;" vr-mode-ui="enabled: false">
       
-      <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+      <a-entity camera look-controls="touchEnabled: false" position="0 0 0">
+        <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+      </a-entity>
 
-      <a-marker preset="hiro">
+      <a-light type="ambient" intensity="1.5"></a-light>
+      <a-light type="directional" position="-1 2 1" intensity="1"></a-light>
+
+      <a-entity id="ar-content" position="0 0 -4">
         
-        <a-entity rotation="-90 0 0" position="0 0 0">
-            
-            <a-image id="ar-portrait" src="" position="-1 0.5 0" width="1.2" height="1.5"></a-image>
+        <a-entity id="card-group" rotation="0 0 0">
+          
+          <a-image id="ar-img" src="" position="-0.8 0.5 0" width="1" height="1.3"></a-image>
+          
+          <a-text id="ar-name" value="NAME" position="0 1.3 0" align="center" width="5" color="#f1c40f" font="mozillavr"></a-text>
 
-            <a-text id="ar-name" value="LOADING..." position="-0.3 1.1 0" color="#f1c40f" width="5" font="mozillavr"></a-text>
+          <a-entity position="0.6 0.5 0">
+            <a-box class="clickable" position="0 0.3 0" width="1.4" height="0.3" depth="0.05" color="#34495e"
+                   onclick="showInfo('bg')">
+              <a-text value="BACKGROUND" align="center" color="white" z-offset="0.06"></a-text>
+            </a-box>
+            <a-box class="clickable" position="0 -0.1 0" width="1.4" height="0.3" depth="0.05" color="#34495e"
+                   onclick="showInfo('con')">
+               <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06"></a-text>
+            </a-box>
+            <a-box class="clickable" position="0 -0.5 0" width="1.4" height="0.3" depth="0.05" color="#f1c40f"
+                   onclick="showInfo('quiz')">
+               <a-text value="QUIZ GAME >" align="center" color="#1a1a2e" z-offset="0.06"></a-text>
+            </a-box>
+          </a-entity>
 
-            <a-entity position="0.8 0.5 0.1">
-                <a-box class="clickable" color="#34495e" width="1.8" height="0.3" depth="0.1"
-                       onclick="showData('bg')"></a-box>
-                <a-text value="BACKGROUND INFO" align="center" color="white" z-offset="0.06" scale="1.2 1.2 1.2"></a-text>
-            </a-entity>
-
-            <a-entity position="0.8 0.1 0.1">
-                <a-box class="clickable" color="#34495e" width="1.8" height="0.3" depth="0.1"
-                       onclick="showData('con')"></a-box>
-                <a-text value="CONTRIBUTION" align="center" color="white" z-offset="0.06" scale="1.2 1.2 1.2"></a-text>
-            </a-entity>
-
-            <a-entity position="0.8 -0.3 0.1">
-                <a-box class="clickable" color="#f1c40f" width="1.8" height="0.3" depth="0.1"
-                       onclick="showData('quiz')"></a-box>
-                <a-text value="START QUIZ >" align="center" color="#1a1a2e" z-offset="0.06" scale="1.2 1.2 1.2" font="sourcecodepro"></a-text>
-            </a-entity>
-            
         </a-entity>
 
-      </a-marker>
-      
-      <a-entity camera></a-entity>
+      </a-entity>
 
     </a-scene>
 
     <script>
-      // --- DATABASE ---
+      // --- DB ---
       const db = {
-        hubback: {
-          name: "A.B. HUBBACK",
-          img: "./assets/hubback.png",
-          bg: "Arthur Benison Hubback (1871-1948) was a British architect who designed many of Malaysia's most iconic colonial buildings.",
-          con: "His major contributions include the Jamek Mosque, the chaotic yet beautiful Ipoh Railway Station, and the old Kuala Lumpur Railway Station.",
-          quiz: "Hubback was responsible for which famous mosque? (Answer: Jamek Mosque)"
-        },
-        norman: {
-          name: "A.C. NORMAN",
-          img: "./assets/norman.png",
-          bg: "A.C. Norman (1858-1944) served as a government architect in Malaya.",
-          con: "He is best known for the ground plan of the Sultan Abdul Samad Building, although the facade style was later modified.",
-          quiz: "What building's ground plan did Norman design? (Answer: Sultan Abdul Samad)"
-        },
-        bidwell: {
-          name: "R.A.J BIDWELL",
-          img: "./assets/bidwell.png",
-          bg: "R.A.J Bidwell was a key figure in the transition of architectural styles in Malaya.",
-          con: "He drafted the detailed plans for the Sultan Abdul Samad Building, shifting the style to Indo-Saracenic.",
-          quiz: "Who drafted the detailed plans for the Sultan Abdul Samad Building?"
-        },
-        spooner: {
-          name: "CHARLES SPOONER",
-          img: "./assets/spooner.png",
-          bg: "State Engineer Charles Spooner was the visionary who demanded a unique style for KL.",
-          con: "He rejected the classical Renaissance style and ordered the use of 'Mahometan' (Islamic) style for government buildings.",
-          quiz: "Spooner rejected Renaissance style in favor of what?"
-        }
+        hubback: { name: "A.B. HUBBACK", img: "./assets/hubback.png", bg: "Hubback was a Brigadier General and Architect...", con: "Designed Jamek Mosque & KL Railway Station.", quiz: "Which war did he serve in? (A: WWI)" },
+        norman: { name: "A.C. NORMAN", img: "./assets/norman.png", bg: "Norman was a senior government architect...", con: "Created the ground plan for Sultan Abdul Samad Building.", quiz: "He designed the ground plan for which building?" },
+        bidwell: { name: "R.A.J BIDWELL", img: "./assets/bidwell.png", bg: "Bidwell was a young, talented draftsman...", con: "Draw the detailed Indo-Saracenic plans.", quiz: "Who was the State Engineer he worked for?" }
       };
 
       let currentId = null;
 
-      // --- UI NAVIGATION ---
-      function goToSelection() {
-        document.getElementById('title-screen').style.display = 'none';
-        document.getElementById('selection-screen').style.display = 'flex';
+      // 1. START CAMERA MANUALLY
+      async function initCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+          });
+          const video = document.getElementById('cam-feed');
+          video.srcObject = stream;
+          video.play();
+        } catch (err) {
+          alert("Camera Error: " + err);
+        }
       }
 
-      let slideIndex = 0;
-      function moveSlide(n) {
-        const cards = document.querySelectorAll('.carousel-card');
-        cards[slideIndex].classList.remove('active');
-        slideIndex += n;
-        if(slideIndex >= cards.length) slideIndex = 0;
-        if(slideIndex < 0) slideIndex = cards.length - 1;
-        cards[slideIndex].classList.add('active');
-      }
+      // 2. LAUNCH AR
+      function startAR(id) {
+        // Init Cam
+        initCamera();
 
-      // --- LAUNCH AR ---
-      function launchAR(id) {
+        // Update Data
         currentId = id;
         const data = db[id];
-
-        // 1. Update AR Content
-        const portrait = document.querySelector('#ar-portrait');
-        const nameText = document.querySelector('#ar-name');
         
-        // Handle image: use placeholder if actual image fails or is missing in DB
-        if(data.img) {
-            portrait.setAttribute('src', data.img);
-        } else {
-            portrait.setAttribute('src', 'https://via.placeholder.com/300?text=No+Image');
+        document.getElementById('ar-name').setAttribute('value', data.name);
+        
+        // Image check
+        const imgEl = document.getElementById('ar-img');
+        if(data.img) imgEl.setAttribute('src', data.img);
+        else imgEl.setAttribute('src', 'https://via.placeholder.com/300');
+
+        // UI Swap
+        document.getElementById('selection-screen').style.display = 'none';
+        document.getElementById('controls-area').style.display = 'flex';
+        
+        // Request DeviceOrientation (Required for iOS 13+)
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then(response => { if (response == 'granted') { /* Great */ } })
+            .catch(console.error);
         }
         
-        nameText.setAttribute('value', data.name);
-
-        // 2. Hide UI / Show Overlay
-        document.getElementById('ui-layer').style.display = 'none';
-        document.getElementById('scan-overlay').style.display = 'block';
+        resetPos();
       }
 
-      function exitAR() {
-        document.getElementById('scan-overlay').style.display = 'none';
-        document.getElementById('ui-layer').style.display = 'flex';
-        closeHolo();
-      }
-
-      // --- INTERACTIONS ---
-      // Note: We attach these via HTML onclick attributes in the A-Frame entities above
-      window.showData = function(type) {
-        if(!currentId) return;
-        const data = db[currentId];
-        
-        const panel = document.getElementById('holo-panel');
-        const title = document.getElementById('holo-title');
-        const content = document.getElementById('holo-content');
-        
-        panel.style.display = 'flex';
-
-        if(type === 'bg') {
-            title.innerText = "Background";
-            content.innerText = data.bg;
-        } else if (type === 'con') {
-            title.innerText = "Contribution";
-            content.innerText = data.con;
-        } else if (type === 'quiz') {
-            title.innerText = "Mini Quiz";
-            content.innerText = data.quiz;
-        }
-      }
-
-      window.closeHolo = function() {
+      function goBack() {
+        document.getElementById('selection-screen').style.display = 'flex';
+        document.getElementById('controls-area').style.display = 'none';
         document.getElementById('holo-panel').style.display = 'none';
+      }
+
+      // 3. MOVER LOGIC
+      function updatePos() {
+        const x = document.getElementById('sl-x').value;
+        const y = document.getElementById('sl-y').value;
+        const z = document.getElementById('sl-z').value;
+        
+        const el = document.getElementById('ar-content');
+        el.setAttribute('position', `${x} ${y} ${z}`);
+      }
+
+      function resetPos() {
+        document.getElementById('sl-x').value = 0;
+        document.getElementById('sl-y').value = 0;
+        document.getElementById('sl-z').value = -4; // Default distance
+        updatePos();
+      }
+
+      // 4. BUTTON INTERACTIONS
+      // Note: A-Frame clicks require Raycaster setup, which we have.
+      // But passing functions to A-Frame onclick is tricky. 
+      // We are using standard HTML onclick on the a-box primitive (only works in some A-Frame versions).
+      // If clicks fail, we use this fallback Listener:
+      
+      // Let's rely on global window function for the onclick attributes in HTML
+      window.showInfo = function(type) {
+        if(!currentId) return;
+        const p = document.getElementById('holo-panel');
+        const t = document.getElementById('holo-title');
+        const d = document.getElementById('holo-desc');
+        
+        p.style.display = 'flex';
+        if(type === 'bg') { t.innerText = "Background"; d.innerText = db[currentId].bg; }
+        else if(type === 'con') { t.innerText = "Contribution"; d.innerText = db[currentId].con; }
+        else { t.innerText = "Quiz"; d.innerText = db[currentId].quiz; }
       }
 
     </script>
